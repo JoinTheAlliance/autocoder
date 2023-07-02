@@ -108,66 +108,49 @@ def handle_response(response):
         print("Failed to parse arguments.")
         return None
 
-    print("Plan argument:")
-    print(arguments.get("plan"))
-
     return arguments
 
 
 def main(input_goal, filename):
     print("Input goal:")
     print(input_goal)
-    # write a function that writes code to a path
+    # write a function that writes code to a filename
     write_code_function = {
         "name": "write_code",
-        "description": "Write a python script and save it to a path",
+        "description": "Write a python script and save it to a filename",
         "parameters": {
             "type": "object",
             "properties": {
-                "plan": {
-                    "type": "string",
-                    "description": "The strategy and approach to solve the problem and write the correct code.",
-                },
                 "code": {
                     "type": "string",
-                    "description": "The code to write to the path, should include everything, including imports and tests",
-                },
-                "path": {
-                    "type": "string",
-                    "description": "The path to write the code to",
-                },
+                    "description": "The code to write to the file, should include everything, including imports and tests and all code",
+                }
             },
-            "required": ["code", "path"],
+            "required": ["code"],
         },
     }
 
     improve_code_function = {
         "name": "improve_code",
-        "description": "Improve the code at a path",
+        "description": "Improve the code",
         "parameters": {
             "type": "object",
             "properties": {
-                "plan": {
-                    "type": "string",
-                    "description": "The strategy and approach for how the code can be improved.",
-                },
                 "code": {
                     "type": "string",
                     "description": "The code to improve",
-                },
-                "path": {
-                    "type": "string",
-                    "description": "The path to the code to improve",
-                },
+                }
             },
-            "required": ["code", "path"],
+            "required": ["code"],
         },
     }
 
     write_code_prompt = (
-        "Write a python script and give it a file path to be written to. "
-        "The script should include everything, including imports and tests. "
+        "Write a python script. The script should include all code and be extremely detailed, including imports and tests. "
         "The script should be able to run without errors. "
+        "Be thorough and detailed -- do not leave anything out."
+        "Include all of the goals and reasoning as a python comment at the top of the script."
+        "Add detailed comments for each line of code, explaining what it does and why."
         "The script should do the following:\n" + input_goal
     )
 
@@ -185,25 +168,30 @@ def main(input_goal, filename):
             + "```\nI get this error:\n```"
             + error
             + "```\nPlease fix the code and rewrite the script. Include all code, including imports and tests (not just a code snippet)."
+            "The script should be able to run without errors. "
+            "Include all of the goals and reasoning as a comment at the top of the script."
+            "Add detailed comments for each line of new code, explaining what it does and why. Do not abbreviate or leave anything out."
         )
     
     def compose_specific_improvement_prompt(code, error):
         return (
             "I have this code:\n```"
             + code +
+            "The script should be able to run without errors. "
+            "Include all of the goals and reasoning as a comment at the top of the script."
+            "Add detailed comments for each line of new code, explaining what it does and why. Do not abbreviate or leave anything out."
             "\n```\nI would like to make the following changes:" + 
             input_goal
         )
 
     use_improve = False
-    path = filename
     # check if a file exists at filename
     if subprocess.call(["test", "-f", filename]) == 0:
         print("File already exists at " + filename)
         use_improve = True
 
     if(use_improve == False):
-        print("Writing code to path: " + path)
+        print("Writing code to filename: " + filename)
         print("Prompt:")
         print(write_code_prompt)
         response = use_language_model(
@@ -226,12 +214,11 @@ def main(input_goal, filename):
         print(arguments)
 
         code = arguments["code"]
-        path = arguments["path"]
 
-        with open(path, "w") as f:
+        with open(filename, "w") as f:
             f.write(code)
 
-        print(f"Code written to path: {path}")
+        print(f"Code written to filename: {filename}")
 
         import_lines = [line for line in code.split("\n") if line.startswith("import")]
 
@@ -242,7 +229,7 @@ def main(input_goal, filename):
             print(f"Installed package: {package}")
 
     process = subprocess.Popen(
-        ["python3", path], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        ["python3", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     output, error = process.communicate()
     output = output.decode("utf-8")
@@ -261,7 +248,7 @@ def main(input_goal, filename):
     while retry_count < retries:
         if error or use_improve == True:
             print("Attempting to improve code.")
-            code = open(path).read()
+            code = open(filename).read()
             print("Code:")
             print(code)
             if(use_improve == False):
@@ -288,14 +275,12 @@ def main(input_goal, filename):
                 if arguments is None:
                     print("Failed to handle response.")
                     return
-                print("Plan argument:")
-                print(arguments.get("plan"))
 
                 improved_code = arguments["code"]
 
-                with open(path, "w") as f:
+                with open(filename, "w") as f:
                     f.write(improved_code)
-                print("Code improved and written to the same path")
+                print("Code improved and written to the same filename")
 
                 import_lines = [line for line in improved_code.split("\n") if line.startswith("import")]
 
@@ -306,7 +291,7 @@ def main(input_goal, filename):
                     print(f"Installed package: {package}")
 
                 process = subprocess.Popen(
-                    ["python3", path], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    ["python3", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 output, error = process.communicate()
                 output = output.decode("utf-8")
