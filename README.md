@@ -1,3 +1,5 @@
+<img src="resources/autocode.png" width="100%">
+
 # autocode
 Code that basically writes itself.
 
@@ -27,9 +29,7 @@ Type in the name of the file -- you can select one that exists, or a new file. G
 
 To self-improve autocode
 ```
-python start.py --improve --model 4
-# or improve utils
-python start.py --improve --utils --model 4
+python start.py --filename core/utils.py --goal "Improve the autocode program by adding robust tests for each function, as well as descriptive docstrings."
 ```
 
 If your improvements are good, please submit a pull request.

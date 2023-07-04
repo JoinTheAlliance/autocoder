@@ -3,7 +3,6 @@ __pycache__
 .vscode
 *.wav
 *.mp3
-*.png
 *.jpg
 backups/
 logs/
