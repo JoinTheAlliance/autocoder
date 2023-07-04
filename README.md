@@ -33,13 +33,3 @@ python start.py --improve --utils --model 4
 ```
 
 If your improvements are good, please submit a pull request.
-
-
-
-
-notes
-- check for imports in reponse in improve code. if none, but it had them before, paste them in (but we need to not count them in header during code check, so delete imports
-
-- check if imports only, then we need to add them to the top of the file
-
-- check if name == name is the first line, if it is then we should paste the code at the bottom of the file, replacing the curent name == main line
