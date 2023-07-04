@@ -8,7 +8,7 @@ To run with a prompt
 python start.py
 ```
 
-To run without the terminal
+To run "headless" (without being prompted)
 ```
 python start.py --filename hello_wikipedia.py --goal "Write a program that searches wikipedia for Hello World and saves the article to hello_world.txt"
 ```
