@@ -30,6 +30,10 @@ def main(goal, filename):
         if error or retry_count == 1:
             [success, error, output] = improve_code(filename, goal, error)
 
+            if error or success == False:
+                log(filename, "THE IMPROVEMENT EXPERIMENT FAILED. RECALIBRATING...")
+                continue
+
             validation = validate_code(filename, goal, output)
 
             log(filename, validation["explanation"])
