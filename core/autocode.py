@@ -6,9 +6,8 @@ from core.write_code import write_code
 
 
 def main(goal, filename):
-    run_improvement = True
+    print("RUNNING AUTOCODER")
     if file_exists(filename) == False:
-        run_improvement = False
         retries = 0
         max_retries = 3
         while retries < max_retries:
@@ -27,23 +26,32 @@ def main(goal, filename):
     [error, _] = run_code(filename)
     while retry_count < retries:
         retry_count += 1
-        if error or run_improvement == True:
-            run_improvement = False # always run improvement at least once, even if code already works
+        # always run at least once
+        if error or retry_count == 1:
             [success, error, output] = improve_code(filename, goal, error)
-            if success:
-                validation = validate_code(filename, goal, output)
-                if validation["success"]:
-                    log(
-                        filename,
-                        "THE EXPERIMENT WAS GENERATED. READY FOR MANUAL TESTING.",
-                    )
-                    break
+
+            validation = validate_code(filename, goal, output)
+
+            log(filename, validation["explanation"])
+            if validation["success"]:
+                log(
+                    filename,
+                    "THE EXPERIMENT PASSED AUTOMATIC VALIDATION. READY FOR MANUAL TESTING.",
+                )
+                error = None
+                break
+            else:
+                error = validation["explanation"]
                 if validation["revert"]:
                     log(
                         filename,
                         "EXPERIMENT EXPERIENCED CATASTROPHIC ERROR. REVERTING TO PREVIOUS STATE",
                     )
                     save_code(original_code, filename)
+                log(
+                    filename,
+                    "THE EXPERIMENT FAILED TO VALIDATE. RECALIBRATING...",
+                )
         else:
             break
 

@@ -156,6 +156,8 @@ def improve_code(filename, goal, error):
         install_imports(code)
     [error, output] = run_code(filename)
 
+    log(filename, reasoning)
+
     if previous_code == code_before_coalesce:
         log(filename, "NO IMPROVEMENTS MADE BEFORE COALESCE.")
         return [False, error, output]

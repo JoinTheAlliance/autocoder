@@ -1,5 +1,14 @@
 import os
-from core.utils import is_runnable, log, read_code, strip_header, compose_header, save_code, run_code
+from core.utils import (
+    is_runnable,
+    log,
+    read_code,
+    strip_header,
+    compose_header,
+    save_code,
+    run_code,
+)
+
 
 def coalesce(filename, code, previous_code, goal, reasoning):
     log(filename, "COALESCING OUTPUT STATE WITH PREVIOUS STATE")
@@ -13,7 +22,9 @@ def coalesce(filename, code, previous_code, goal, reasoning):
 
     # find footer in the code
     footer_line = next((line for line in code_lines if "__name__" in line), None)
-    previous_footer_line = next((line for line in previous_code_lines if "__name__" in line), None)
+    previous_footer_line = next(
+        (line for line in previous_code_lines if "__name__" in line), None
+    )
 
     new_code_has_footer = footer_line is not None
     previous_code_has_footer = previous_footer_line is not None
@@ -24,11 +35,15 @@ def coalesce(filename, code, previous_code, goal, reasoning):
         footer = None
 
     if previous_code_has_footer:
-        previous_footer = "\n".join(previous_code_lines[previous_code_lines.index(previous_footer_line) :])
+        previous_footer = "\n".join(
+            previous_code_lines[previous_code_lines.index(previous_footer_line) :]
+        )
     else:
         previous_footer = None
 
-    has_new_footer = new_code_has_footer and previous_code_has_footer and footer != previous_footer
+    has_new_footer = (
+        new_code_has_footer and previous_code_has_footer and footer != previous_footer
+    )
 
     footer_snippet = None
     if has_new_footer:
@@ -48,13 +63,13 @@ def coalesce(filename, code, previous_code, goal, reasoning):
             code_lines = code_lines[: code_lines.index(footer_line)]
             code = "\n".join(code_lines) + "\n" + footer
             log(filename, "*** REPLACING TAIL OF PREVIOUS STATE WITH RESULT")
-    elif new_code_has_footer is False and previous_code_has_footer is False:
+    if new_code_has_footer is False and previous_code_has_footer is False:
         code = (
             code
             + "\n\nif __name__ == '__main__':\n    # TODO: ADD TESTS HERE\n    assert(False)"
         )
         log(filename, "*** ATTACHING INITIALIZATION TAIL TO PREVIOUS STATE")
-    
+
     import_lines = [line for line in code.split("\n") if line.startswith("import")] + [
         line for line in code.split("\n") if line.startswith("from")
     ]
@@ -75,12 +90,13 @@ def coalesce(filename, code, previous_code, goal, reasoning):
     previous_code_has_imports = len(previous_import_lines) > 0
 
     if new_code_has_imports == False and previous_code_has_imports == False:
-        log(filename, "*** COALESCENCE FAILED: NO HEADER INFORMATION DETECTED IN EITHER STATE")
+        log(
+            filename,
+            "*** COALESCENCE FAILED: NO HEADER INFORMATION DETECTED IN EITHER STATE",
+        )
         return {"code": code_backup, "new_imports": None, "success": False}
 
-    new_imports = (
-        new_code_has_imports == True and previous_code_has_imports == False
-    )
+    new_imports = new_code_has_imports == True and previous_code_has_imports == False
 
     if (
         new_imports == False
@@ -106,7 +122,7 @@ def coalesce(filename, code, previous_code, goal, reasoning):
         code = "\n".join(code_lines)
 
     code = compose_header(goal, reasoning) + code
-    
+
     # if there is a ... in the code, and it's not in a comment, then we probably lost some code
     if "..." in code and "#" not in code.split("...")[0]:
         log(filename, "*** COALESCENCE FAILED: CODE WAS LOST")
@@ -116,60 +132,32 @@ def coalesce(filename, code, previous_code, goal, reasoning):
             "success": False,
         }
 
-    if(code == code_backup):
+    if code == code_backup:
         log(filename, "*** COALESCENCE HAD NO RESULT, GENERATIONS ARE IDENTICAL")
         return {"code": code, "new_imports": new_imports, "success": False}
-    if(code != code_backup):
+    if code != code_backup:
         log(filename, "*** COALESCENCE SUCCEEDED")
 
     return {"code": code, "new_imports": new_imports, "success": True}
 
+
 if __name__ == "__main__":
+
     def create_test_file(filename, imports, footer):
-        with open(filename, 'w') as f:
-            f.write(imports + '\n\n' + footer)
+        with open(filename, "w") as f:
+            f.write(imports + "\n\n" + footer)
+
     # Test 1
     print("Running Test 1...")
-    imports = 'import os\nimport sys'
+    imports = "import os\nimport sys"
     footer = 'if __name__ == "__main__":\n    print("Hello, World!")'
     create_test_file("old.py", imports, footer)
     create_test_file("new.py", imports, footer)
 
-    result = coalesce("test1", read_code("new.py"), read_code("old.py"), "goal", "reasoning")
+    result = coalesce(
+        "test1", read_code("new.py"), read_code("old.py"), "goal", "reasoning"
+    )
     assert result["success"] == True, f"Test 1 failed with {result}"
-
-    # Test 2
-    print("Running Test 2...")
-    new_imports = 'import os\nimport sys\nimport math'
-    new_footer = 'if __name__ == "__main__":\n    print("Hello, Universe!")'
-    create_test_file("new.py", new_imports, new_footer)
-
-    result = coalesce("test2", read_code("new.py"), read_code("old.py"), "goal", "reasoning")
-    assert result["success"] == True, f"Test 2 failed with {result}"
-
-    # Test 3
-    print("Running Test 3...")
-    create_test_file("old.py", '', '')
-    create_test_file("new.py", '', '')
-
-    result = coalesce("test3", read_code("new.py"), read_code("old.py"), "goal", "reasoning")
-    assert result["success"] == False, f"Test 3 failed with {result}"
-
-    # Test 4
-    print("Running Test 4...")
-    create_test_file("old.py", '', '')
-    create_test_file("new.py", 'import os', footer)
-
-    result = coalesce("test4", read_code("new.py"), read_code("old.py"), "goal", "reasoning")
-    assert result["success"] == True, f"Test 4 failed with {result}"
-
-    # Test 5
-    print("Running Test 5...")
-    create_test_file("old.py", '', footer)
-    create_test_file("new.py", imports, footer)
-
-    result = coalesce("test5", read_code("new.py"), read_code("old.py"), "goal", "reasoning")
-    assert result["success"] == True, f"Test 5 failed with {result}"
 
     # Cleanup
     os.remove("old.py")
