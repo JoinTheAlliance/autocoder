@@ -1,12 +1,9 @@
 import os
 from core.utils import (
-    is_runnable,
     log,
     read_code,
     strip_header,
     compose_header,
-    save_code,
-    run_code,
 )
 
 
@@ -51,10 +48,13 @@ def coalesce(filename, code, previous_code, goal, reasoning):
             footer_snippet = footer.split("...")[1]
             if footer_snippet.strip() == "":
                 footer_snippet = None
+                print("footer_snippet is empty")
         elif code_lines.index(footer_line) < 4:
             footer_snippet = footer.split("\n")
         if footer_snippet is not None and footer_line in footer_snippet:
+            print("footer_snippet before:", footer_snippet)
             footer_snippet = footer_snippet.split(footer_line)[1]
+            print("footer_snippet after:", footer_snippet)
 
         if footer_snippet is not None:
             log(filename, "*** CONCATENING RESULT WITH PREVIOUS STATE")
@@ -70,21 +70,42 @@ def coalesce(filename, code, previous_code, goal, reasoning):
         )
         log(filename, "*** ATTACHING INITIALIZATION TAIL TO PREVIOUS STATE")
 
-    import_lines = [line for line in code.split("\n") if line.startswith("import")] + [
+    import_lines = [line for line in code.split("\n") if line.startswith("import")]
+    from_import_lines = [
         line for line in code.split("\n") if line.startswith("from")
     ]
+
     import_lines = [
         line.split("as")[0].split("import")[1].split(".")[-1].strip()
         for line in import_lines
     ]
 
+    # from_import_lines start with "from <package>.<subpackage> import <module> or from <package> import <module>"
+    # we want to get the <package> part
+    from_import_lines = [
+        line.split("import")[0].split("from")[1].split(".")[0].strip()
+        for line in from_import_lines
+    ]
+
+    import_lines += from_import_lines
+
     previous_import_lines = [
         line for line in previous_code.split("\n") if line.startswith("import")
-    ] + [line for line in previous_code.split("\n") if line.startswith("from")]
+    ]
+    
+    previous_from_import_lines = [line for line in previous_code.split("\n") if line.startswith("from")]
+    
     previous_import_lines = [
         line.split("as")[0].split("import")[1].split(".")[-1].strip()
         for line in previous_import_lines
     ]
+
+    previous_from_import_lines = [
+        line.split("import")[0].split("from")[1].split(".")[0].strip()
+        for line in previous_from_import_lines
+    ]
+
+    previous_import_lines += previous_from_import_lines
 
     new_code_has_imports = len(import_lines) > 0
     previous_code_has_imports = len(previous_import_lines) > 0
@@ -122,6 +143,8 @@ def coalesce(filename, code, previous_code, goal, reasoning):
         code = "\n".join(code_lines)
 
     code = compose_header(goal, reasoning) + code
+
+    print("final footer snippet:", footer_snippet)
 
     # if there is a ... in the code, and it's not in a comment, then we probably lost some code
     if "..." in code and "#" not in code.split("...")[0]:

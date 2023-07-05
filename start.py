@@ -14,22 +14,10 @@ def terminal():
     filename = None
     goal = None
 
-    if "--improve" in sys.argv:
-        goal = "Write one or more tests to validate the functions and add them to the bottom of the script. Add test cases to ensure that the tests work. The tests should use assert and only run if __name__ == '__main__' at the bottom of the script. If there are any errors in the code, fix them. Your reponse should strt with 'import os' and end with the tests."
-        filename = "autocode.py"
-        if "--utils" in sys.argv:
-            filename = "utils.py"
-        elif "--start" in sys.argv:
-            filename = "start.py"
-        elif "--language_model" in sys.argv:
-            filename = "language_model.py"
-        return [goal, filename]
-
-    else:
-        if "--filename" in sys.argv:
-            filename = sys.argv[sys.argv.index("--filename") + 1]
-        if "--goal" in sys.argv:
-            goal = sys.argv[sys.argv.index("--goal") + 1]
+    if "--filename" in sys.argv:
+        filename = sys.argv[sys.argv.index("--filename") + 1]
+    if "--goal" in sys.argv:
+        goal = sys.argv[sys.argv.index("--goal") + 1]
 
     while not os.environ.get("OPENAI_API_KEY"):
         print("OPENAI_API_KEY env var is not set. Enter it here:")

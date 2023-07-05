@@ -1,15 +1,15 @@
-import os
 from core.coalesce import coalesce
 from core.model import use_language_model
 from core.utils import (
     compose_header,
-    install_imports,
     run_code,
     save_code,
     strip_header,
     validate_file,
     log,
 )
+
+from core.install_imports import install_imports
 
 
 def improve_code(filename, goal, error):
@@ -48,6 +48,7 @@ def improve_code(filename, goal, error):
             "\n```\n" + code + "```\n"
             "I want to improve my code. My goal is:```\n" + goal
         )
+    log(filename, improvement_prompt)
 
     improve_code_function = {
         "name": "improve_code",
@@ -129,6 +130,10 @@ def improve_code(filename, goal, error):
             continue
         break
 
+    print("*** response_code:", response_code)
+    print("*** goal:", goal)
+    print("*** reasoning:", reasoning)
+
     code = compose_header(goal, reasoning) + strip_header(response_code)
     save_code(code, filename)
 
@@ -141,9 +146,7 @@ def improve_code(filename, goal, error):
     full_validation = validate_file(filename)
     full_validation_success = full_validation["success"]
     if error or full_validation_success == False:
-        soft_validation = validate_file(
-            filename, skip_import=True, skip_name_main_check=True
-        )
+        soft_validation = validate_file(filename)
         soft_validation_success = soft_validation["success"]
         if soft_validation_success == True:
             response = coalesce(filename, code, previous_code, goal, reasoning)

@@ -65,6 +65,12 @@ def compose_header(goal, reasoning=None):
 
 
 def strip_header(code):
+    if code is None:
+        print("Error, can't strip header, code is None")
+        return code
+    if len(code.split("\n")) == 1 and code.startswith("#"):
+        print("Error, can't strip header, code is only one line and it's a comment")
+        return code
     # remove any lines at the beginning that are whitespace only
     while code.startswith("\n"):
         code = code.split("\n", 1)[1]
@@ -75,29 +81,6 @@ def strip_header(code):
     while code.startswith("\n"):
         code = code.split("\n", 1)[1]
     return code
-
-
-def install_imports(code):
-    import_lines = [line for line in code.split("\n") if line.startswith("import")]
-    import_lines = [line.split("as")[0] for line in import_lines]
-
-    from_lines = [line for line in code.split("\n") if line.startswith("from")]
-    # get the python module name
-    # remove "from " and anything before import, also remove anything before .
-    from_lines = [
-        line.split("import")[0].split("from")[1].split(".")[-1].strip()
-        for line in from_lines
-    ]
-
-    import_lines += from_lines
-    
-
-    for line in import_lines:
-        print(f"ADDING PACKAGES TO SYSTEM: {line}")
-        package = line.replace("import", "").strip()
-        subprocess.call(["pip", "install", package])
-        print(f"INSTALLED PACKAGE: {package}")
-
 
 def read_code(filename):
     return open(filename, "r").read()
@@ -139,7 +122,7 @@ def count_lines(filename):
     return len(lines)
 
 
-def validate_file(filename, skip_import=False, skip_name_main_check=False):
+def validate_file(filename):
     if not is_runnable(filename):
         return {
             "success": False,
@@ -161,7 +144,7 @@ def validate_file(filename, skip_import=False, skip_name_main_check=False):
             "explanation": "The file is not long enough to do much.",
         }
 
-    if skip_import is False and "import" not in read_code(filename):
+    if "import" not in read_code(filename):
         return {
             "success": False,
             "revert": True,
@@ -176,18 +159,18 @@ def validate_file(filename, skip_import=False, skip_name_main_check=False):
             "explanation": "The file doesn't have any functions. Please encapsulate all code inside functions.",
         }
 
-    if skip_name_main_check is False and "if __name__ == '__main__':" not in read_code(filename):
+    if "if __name__ == '__main__':" or "if __name__ == \"__main__\":" not in read_code(filename):
         return {
             "success": False,
             "revert": False,
-            "explanation": "The file doesn't have a main function. Please add a main function and add tests to it..",
+            "explanation": "The file doesn't have a __name__ == '__main__' section. The actual logic should be modular and wrapped in functions, but only called when __name__ == '__main__'. Please add a __name__ == '__main__' section to the bottom of the file and move any tests or invocation of functions to that section.",
         }
 
     if "assert" not in read_code(filename):
         return {
             "success": False,
             "revert": False,
-            "explanation": "The file doesn't have any tests. Please add tests to the main function using python's assert.",
+            "explanation": "The file doesn't have any tests. Please add tests using 'assert' inside the __name__ == '__main__' section at the end of the script. Write tests using python's assert keyword.",
         }
     
     if "# TODO" in read_code(filename):
@@ -195,6 +178,13 @@ def validate_file(filename, skip_import=False, skip_name_main_check=False):
             "success": False,
             "revert": False,
             "explanation": "The file has a TODO in it. Please remove the TODO before submitting.",
+        }
+    
+    if "..." in read_code(filename):
+        return {
+            "success": False,
+            "revert": False,
+            "explanation": "The file has a '...' in it. This indicates that it is not a complete file. Please respond with the complete script and do not omit any functions, code, tests or sections. Your response should include all code, including imports, and tests, not just changes to code.",
         }
 
     return {

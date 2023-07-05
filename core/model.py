@@ -15,8 +15,6 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
         if model.startswith("-"):
             log(filename, "INVALID MODEL.")
             return
-        sys.argv.pop(model_index)
-        sys.argv.pop(model_index)
     if model is None or model == "":
         model = os.getenv("OPENAI_MODEL") or "gpt-3.5-turbo-0613"
 
@@ -40,6 +38,8 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
         "Content-Type": "application/json",
         "Authorization": f"Bearer {openai_api_key}",
     }
+
+    print('model:', model)
 
     data = {"model": model, "messages": messages}
 
@@ -76,6 +76,12 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
 
         response = {"message": message, "function_call": function_call}
 
+    print('*** RESPONSE FUNCTION CALL')
+    print(response["function_call"])
+    # save response to response.json
+    with open("response.json", "w") as f:
+        f.write(json.dumps(response))
+
     if response is None:
         log(filename, "NO RESPONSE FROM GENERATION API API.")
         return None
@@ -86,30 +92,38 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
 
     if "arguments" in response["function_call"]:
         arguments = response["function_call"]["arguments"]
+        print('*** ARGUMENTS')
+        print
         if isinstance(arguments, str):
             arguments = parse_arguments(response["function_call"]["arguments"])
-    if arguments is None:
-        return None
 
     return arguments
 
 
 def parse_arguments(arguments):
-    if isinstance(arguments, dict) or isinstance(arguments, list):
-        return arguments
     try:
         if isinstance(arguments, str):
+            arguments = re.sub(r"\.\.\.|\…", "", arguments)
             return json.loads(arguments)
+        elif isinstance(arguments, dict) or isinstance(arguments, list):
+            return arguments
     except json.JSONDecodeError:
         try:
             return ast.literal_eval(arguments)
         except (ValueError, SyntaxError):
             try:
-                arguments = re.sub(r"[\r\n]+", "\n", arguments)
-                arguments = re.sub(r"[^\x00-\x7F]+", "", arguments)
+                arguments = re.sub(
+                    r"[\r\n]+", "", arguments
+                )
+                arguments = re.sub(
+                    r"[^\x00-\x7F]+", "", arguments
+                )
                 return json.loads(arguments)
             except (ValueError, SyntaxError):
-                return None
+                try:
+                    return eval(arguments)
+                except (ValueError, SyntaxError):
+                    return None
 
 
 if __name__ == "__main__":

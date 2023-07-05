@@ -53,6 +53,8 @@ def validate_code(filename, goal, output):
         "```\nPlease return a boolean value indicating if the script is valid and implements the intended goal."
     )
 
+    log(filename, validate_prompt)
+
     retries = 10
     retry_count = 0
     arguments = None

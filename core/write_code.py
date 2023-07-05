@@ -1,4 +1,5 @@
-from core.utils import log, strip_header, compose_header, save_code, install_imports
+from core.utils import log, strip_header, compose_header, save_code
+from core.install_imports import install_imports
 from core.model import use_language_model
 
 def write_code(filename, goal):
@@ -16,6 +17,8 @@ def write_code(filename, goal):
             "The last line of code should print 'All tests complete!'.\n"
             "The script should do the following:\n" + goal + "\n"
         )
+    
+    print(filename, write_code_prompt(goal))
 
     user_message = {"role": "user", "content": write_code_prompt(goal)}
 
