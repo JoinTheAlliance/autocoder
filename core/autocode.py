@@ -26,14 +26,16 @@ def main(goal, filename):
     # read the code
     original_code = open(filename).read()
     [error, _] = run_code(filename)
+    validation_passed = False
     while retry_count < retries:
+        print('EXPERIMENT #', retry_count + 1, '/', retries)
         retry_count += 1
         # always run at least once
-        if error or retry_count == 1:
+        if validation_passed == False and error or retry_count == 1:
             [success, error, output] = improve_code(filename, goal, error)
 
             # something went wrong, feed the error back into the model and run it again
-            if error or success == False:
+            if error:
                 log(filename, "THE IMPROVEMENT EXPERIMENT FAILED. RECALIBRATING...")
                 continue
 
@@ -42,6 +44,7 @@ def main(goal, filename):
             log(filename, validation["explanation"])
             # passed validation, finish up
             if validation["success"]:
+                validation_passed = True
                 log(
                     filename,
                     "THE EXPERIMENT PASSED AUTOMATIC VALIDATION. READY FOR MANUAL TESTING.",
@@ -51,6 +54,13 @@ def main(goal, filename):
             # validation failed
             else:
                 error = validation["explanation"]
+                if error is None and success is False:
+                    print("No error, but no success either. Piping output to error:")
+                    print(output)
+                    error = output
+                    continue
+                print("ERROR")
+                print(error)
                 # if revert is true, revert to the last version of the code
                 if validation["revert"]:
                     log(
@@ -58,10 +68,12 @@ def main(goal, filename):
                         "EXPERIMENT EXPERIENCED CATASTROPHIC ERROR. REVERTING TO PREVIOUS STATE",
                     )
                     save_code(original_code, filename)
+                    continue
                 log(
                     filename,
                     "THE EXPERIMENT FAILED TO VALIDATE. RECALIBRATING...",
                 )
+                continue
         else:
             break
 
