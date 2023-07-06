@@ -1,4 +1,4 @@
-from core.coalesce import coalesce
+from core.heal_code import heal_code
 from core.model import use_language_model
 from core.logger import log
 
@@ -139,7 +139,7 @@ def improve_code(filename, goal, error):
     code = compose_header(goal, reasoning) + strip_header(response_code)
     save_code(code, filename)
 
-    code_before_coalesce = code
+    code_before_heal = code
     [error, output] = run_code(filename)
 
     should_install_imports = True
@@ -151,7 +151,7 @@ def improve_code(filename, goal, error):
         soft_validation = validate_file(filename)
         soft_validation_success = soft_validation["success"]
         if soft_validation_success == True:
-            response = coalesce(filename, code, previous_code, goal, reasoning)
+            response = heal_code(filename, code, previous_code, goal, reasoning)
             if response["success"]:
                 code = response["code"]
                 should_install_imports = response["new_imports"]
@@ -161,17 +161,11 @@ def improve_code(filename, goal, error):
         install_imports(code)
     [error, output] = run_code(filename)
 
-    log(filename, reasoning)
-
-    if previous_code == code_before_coalesce:
-        log(filename, "NO IMPROVEMENTS MADE BEFORE COALESCE.")
-        return [False, error, output]
-
     if previous_code == code:
-        log(filename, "NO IMPROVEMENTS MADE AFTER COALESCE.")
+        log(filename, "NO IMPROVEMENTS MADE AFTER HEALING.")
         return [False, error, output]
 
-    if previous_code != code and previous_code != code_before_coalesce:
+    if previous_code != code and previous_code != code_before_heal:
         log(filename, "SOME IMPROVEMENTS MADE.")
         return [True, error, output]
 

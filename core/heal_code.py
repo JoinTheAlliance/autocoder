@@ -7,8 +7,8 @@ from core.code import (
 )
 
 
-def coalesce(filename, code, previous_code, goal, reasoning):
-    log(filename, "COALESCING OUTPUT STATE WITH PREVIOUS STATE")
+def heal_code(filename, code, previous_code, goal, reasoning):
+    log(filename, "MERGING OUTPUT STATE WITH PREVIOUS STATE")
 
     code_backup = code
     code = strip_header(code)
@@ -113,7 +113,7 @@ def coalesce(filename, code, previous_code, goal, reasoning):
     if new_code_has_imports == False and previous_code_has_imports == False:
         log(
             filename,
-            "*** COALESCENCE FAILED: NO HEADER INFORMATION DETECTED IN EITHER STATE",
+            "*** MERGE FAILED: NO HEADER INFORMATION DETECTED IN EITHER STATE",
         )
         return {"code": code_backup, "new_imports": None, "success": False}
 
@@ -148,7 +148,7 @@ def coalesce(filename, code, previous_code, goal, reasoning):
 
     # if there is a ... in the code, and it's not in a comment, then we probably lost some code
     if "..." in code and "#" not in code.split("...")[0]:
-        log(filename, "*** COALESCENCE FAILED: CODE WAS LOST")
+        log(filename, "*** MERGE FAILED: CODE WAS LOST")
         return {
             "code": code_backup,
             "new_imports": new_imports,
@@ -156,10 +156,10 @@ def coalesce(filename, code, previous_code, goal, reasoning):
         }
 
     if code == code_backup:
-        log(filename, "*** COALESCENCE HAD NO RESULT, GENERATIONS ARE IDENTICAL")
+        log(filename, "*** MERGE HAD NO RESULT, GENERATIONS ARE IDENTICAL")
         return {"code": code, "new_imports": new_imports, "success": False}
     if code != code_backup:
-        log(filename, "*** COALESCENCE SUCCEEDED")
+        log(filename, "*** MERGE SUCCEEDED")
 
     return {"code": code, "new_imports": new_imports, "success": True}
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     create_test_file("old.py", imports, footer)
     create_test_file("new.py", imports, footer)
 
-    result = coalesce(
+    result = heal_code(
         "test1", read_code("new.py"), read_code("old.py"), "goal", "reasoning"
     )
     assert result["success"] == True, f"Test 1 failed with {result}"
