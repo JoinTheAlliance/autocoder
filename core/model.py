@@ -4,7 +4,8 @@ import requests
 import ast
 import sys
 import re
-from core.utils import log
+from core.logger import log
+
 
 def use_language_model(messages, functions=None, function_call="auto", filename=None):
     # check if --model is passed in
@@ -39,7 +40,7 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
         "Authorization": f"Bearer {openai_api_key}",
     }
 
-    print('model:', model)
+    print("model:", model)
 
     data = {"model": model, "messages": messages}
 
@@ -51,7 +52,7 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
 
     num_tries = 3
     response = None
-    
+
     for i in range(num_tries):
         log(filename, f"EPOCH CYCLE {i+1}/{num_tries}")
         i = i + 1
@@ -68,7 +69,9 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
         if num_tries >= 3:
             response = None
         else:
-            response = use_language_model(messages, functions, function_call, filename=filename)
+            response = use_language_model(
+                messages, functions, function_call, filename=filename
+            )
     else:
         response_data = response.json()["choices"][0]["message"]
         message = response_data["content"]
@@ -76,7 +79,7 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
 
         response = {"message": message, "function_call": function_call}
 
-    print('*** RESPONSE FUNCTION CALL')
+    print("*** RESPONSE FUNCTION CALL")
     print(response["function_call"])
     # save response to response.json
     with open("response.json", "w") as f:
@@ -92,7 +95,7 @@ def use_language_model(messages, functions=None, function_call="auto", filename=
 
     if "arguments" in response["function_call"]:
         arguments = response["function_call"]["arguments"]
-        print('*** ARGUMENTS')
+        print("*** ARGUMENTS")
         print
         if isinstance(arguments, str):
             arguments = parse_arguments(response["function_call"]["arguments"])
@@ -112,12 +115,8 @@ def parse_arguments(arguments):
             return ast.literal_eval(arguments)
         except (ValueError, SyntaxError):
             try:
-                arguments = re.sub(
-                    r"[\r\n]+", "", arguments
-                )
-                arguments = re.sub(
-                    r"[^\x00-\x7F]+", "", arguments
-                )
+                arguments = re.sub(r"[\r\n]+", "", arguments)
+                arguments = re.sub(r"[^\x00-\x7F]+", "", arguments)
                 return json.loads(arguments)
             except (ValueError, SyntaxError):
                 try:
@@ -134,24 +133,31 @@ if __name__ == "__main__":
     assert parse_arguments(test_input) == expected_output, "Test parse_arguments failed"
 
     # Test use_language_model
-    test_messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Write a song about AI"}]
-    test_functions = [{
-        "name": "write_song",
-        "description": "Write a song about AI",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "lyrics": {
-                    "type": "string",
-                    "description": "The lyrics for the song",
-                }
+    test_messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Write a song about AI"},
+    ]
+    test_functions = [
+        {
+            "name": "write_song",
+            "description": "Write a song about AI",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lyrics": {
+                        "type": "string",
+                        "description": "The lyrics for the song",
+                    }
+                },
+                "required": ["lyrics"],
             },
-            "required": ["lyrics"]
         }
-        }]
+    ]
     test_filename = "test_filename"
-    arguments = use_language_model(test_messages, test_functions, { "name": "write_song"}, test_filename)
+    arguments = use_language_model(
+        test_messages, test_functions, {"name": "write_song"}, test_filename
+    )
     print(arguments["lyrics"])
     assert isinstance(arguments, dict), "Test use_language_model failed"
 
-    print('All tests complete!')
+    print("All tests complete!")

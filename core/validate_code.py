@@ -1,6 +1,8 @@
 import os
 from core.model import use_language_model
-from core.utils import save_code, strip_header, validate_file, log
+from core.logger import log
+from core.code import save_code, strip_header
+from core.validation import validate_file
 
 
 def validate_code(filename, goal, output):

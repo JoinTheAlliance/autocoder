@@ -1,6 +1,8 @@
-from core.utils import log, strip_header, compose_header, save_code
-from core.install_imports import install_imports
+from core.logger import log
+from core.imports import install_imports
 from core.model import use_language_model
+from core.code import strip_header, compose_header, save_code
+
 
 def write_code(filename, goal):
     log(filename, "*** GENERATING INITIAL EXPERIMENT")
@@ -17,7 +19,7 @@ def write_code(filename, goal):
             "The last line of code should print 'All tests complete!'.\n"
             "The script should do the following:\n" + goal + "\n"
         )
-    
+
     print(filename, write_code_prompt(goal))
 
     user_message = {"role": "user", "content": write_code_prompt(goal)}
@@ -57,7 +59,7 @@ def write_code(filename, goal):
             [user_message],
             functions=[write_code_function],
             function_call={"name": "write_code"},
-            filename=filename
+            filename=filename,
         )
 
         if arguments is None:
@@ -76,8 +78,9 @@ def write_code(filename, goal):
             return
 
     if code is None:
-        log(filename, 
-            "INSTABILITY IN GENERATION RESULT. THE EXPERIMENT FAILED TO PRIME. PLEASE TRY AGAIN..."
+        log(
+            filename,
+            "INSTABILITY IN GENERATION RESULT. THE EXPERIMENT FAILED TO PRIME. PLEASE TRY AGAIN...",
         )
         return
 
@@ -88,4 +91,3 @@ def write_code(filename, goal):
     install_imports(code)
 
     return code
-

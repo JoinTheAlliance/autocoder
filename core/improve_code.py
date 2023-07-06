@@ -1,15 +1,17 @@
 from core.coalesce import coalesce
 from core.model import use_language_model
-from core.utils import (
+from core.logger import log
+
+from core.code import (
     compose_header,
     run_code,
     save_code,
     strip_header,
-    validate_file,
-    log,
 )
 
-from core.install_imports import install_imports
+from core.validation import validate_file
+
+from core.imports import install_imports
 
 
 def improve_code(filename, goal, error):
@@ -23,7 +25,7 @@ def improve_code(filename, goal, error):
         "Always wrap your code in a function so that it can be used modularly and imported into other scripts. Call your main function at the end of the script, in the __name__ == '__main__'.\n"
         "NEVER use # ... to abbreviate or leave anything code out. Always respond with a complete script, not a snippet, explanation or plan."
         "Your response should start with an import statement and end with tests to validate your code."
-        "Please add or update any tests to make sure these changes work. Tests should be simple and use the assert keyword and only run if __name__ == '__main__' at the bottom of the script."
+        "Please add or update any tests to make sure these changes work. Tests should use the assert keyword and they should run under __name__ == '__main__' at the bottom of the script."
         "My goal is:```\n"
         + goal
         + "```\nPlease fix the code and write the entire the script with the changes. Include all code, including imports, tests, all functions, everything. The script should run without errors, all tests should print their results to the console. The last line of code should print 'All tests complete!'."

@@ -1,42 +1,17 @@
 import subprocess
+import importlib.util
 
 
-system_packages = [
-    "os",
-    "sys",
-    "re",
-    "math",
-    "random",
-    "time",
-    "datetime",
-    "json",
-    "csv",
-    "glob",
-    "pickle",
-    "subprocess",
-    "shutil",
-    "itertools",
-    "collections",
-    "functools",
-    "operator",
-    "pprint",
-    "logging",
-    "warnings",
-    "inspect",
-    "copy",
-    "gc",
-    "traceback",
-    "types",
-    "asyncio",
-    "unittest",
-    "doctest",
-    "timeit",
-    "string",
-    "hashlib",
-    "getpass",
-    "argparse",
-    "logging",
-]
+def check_if_builtin(module_name):
+    # Try to find a built-in module with the provided name
+    spec = importlib.util.find_spec(module_name)
+
+    # If the spec exists and the module is built-in
+    if spec and spec.origin == "built-in":
+        return True
+
+    # If the module isn't found or isn't built-in
+    return False
 
 
 def install_imports(code):
@@ -71,7 +46,9 @@ def get_imports(code):
     all_imports = [imp.split(".")[0] if "." in imp else imp for imp in all_imports]
 
     # Exclude system packages, and sort
-    user_imports = sorted([imp for imp in all_imports if imp not in system_packages])
+    user_imports = sorted(
+        [imp for imp in all_imports if check_if_builtin(imp) is False]
+    )
 
     return user_imports
 

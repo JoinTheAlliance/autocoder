@@ -1,6 +1,8 @@
 import os
 
-from core.utils import file_exists, run_code, save_code, log
+from core.logger import log
+from core.code import run_code, save_code
+from core.validation import file_exists
 from core.validate_code import validate_code
 from core.improve_code import improve_code
 from core.write_code import write_code

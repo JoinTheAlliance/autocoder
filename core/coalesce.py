@@ -1,6 +1,6 @@
 import os
-from core.utils import (
-    log,
+from core.logger import log
+from core.code import (
     read_code,
     strip_header,
     compose_header,
@@ -71,9 +71,7 @@ def coalesce(filename, code, previous_code, goal, reasoning):
         log(filename, "*** ATTACHING INITIALIZATION TAIL TO PREVIOUS STATE")
 
     import_lines = [line for line in code.split("\n") if line.startswith("import")]
-    from_import_lines = [
-        line for line in code.split("\n") if line.startswith("from")
-    ]
+    from_import_lines = [line for line in code.split("\n") if line.startswith("from")]
 
     import_lines = [
         line.split("as")[0].split("import")[1].split(".")[-1].strip()
@@ -92,9 +90,11 @@ def coalesce(filename, code, previous_code, goal, reasoning):
     previous_import_lines = [
         line for line in previous_code.split("\n") if line.startswith("import")
     ]
-    
-    previous_from_import_lines = [line for line in previous_code.split("\n") if line.startswith("from")]
-    
+
+    previous_from_import_lines = [
+        line for line in previous_code.split("\n") if line.startswith("from")
+    ]
+
     previous_import_lines = [
         line.split("as")[0].split("import")[1].split(".")[-1].strip()
         for line in previous_import_lines
