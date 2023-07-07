@@ -1,4 +1,4 @@
-<img src="resources/autocode.png" width="100%">
+<img src="resources/autocode.jpg" width="100%">
 
 # autocode
 Code that basically writes itself.
