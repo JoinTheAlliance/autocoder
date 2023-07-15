@@ -29,7 +29,7 @@ def get_imports(code):
 
     # Find import lines
     imports = [
-        line.split("as")[0].replace("import", "").strip()
+        line.split(" as")[0].replace("import", "").strip()
         for line in lines
         if line.startswith("import")
     ]

@@ -74,7 +74,7 @@ def heal_code(filename, code, previous_code, goal, reasoning):
     from_import_lines = [line for line in code.split("\n") if line.startswith("from")]
 
     import_lines = [
-        line.split("as")[0].split("import")[1].split(".")[-1].strip()
+        line.split(" as")[0].split("import")[1].split(".")[-1].strip()
         for line in import_lines
     ]
 
@@ -96,7 +96,7 @@ def heal_code(filename, code, previous_code, goal, reasoning):
     ]
 
     previous_import_lines = [
-        line.split("as")[0].split("import")[1].split(".")[-1].strip()
+        line.split(" as")[0].split("import")[1].split(".")[-1].strip()
         for line in previous_import_lines
     ]
 

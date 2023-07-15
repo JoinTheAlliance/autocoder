@@ -11,7 +11,7 @@ def compose_header(goal, reasoning=None):
     #     header = header + "\n".join(["# " + line for line in reasoning.split("\n")])
     # remove any duplicate lines
     header += "\n\n\n"
-    # iterate through each line, if it was the same as the last line, remove it
+    # iterate through each line, if it was the same as xthe last line, remove it
     header = "\n".join(
         [
             line
