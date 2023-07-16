@@ -17,6 +17,7 @@ def terminal():
                 os.environ[key] = value
                 break
     project_path = None
+    project_data = None
 
     if "--project_path" in sys.argv:
         project_path = sys.argv[sys.argv.index("--project_path") + 1]
@@ -63,13 +64,14 @@ def terminal():
                 print("That project does not exist.")
                 project_path = None
                 sys.exit(1)
+            project_data = json.load(open(project_path))
         else:
             print("Invalid option.")
             project_path = None
             sys.exit(1)
-
-    # load file and read json
-    project_data = json.load(open(project_path))
+    else:
+        if "/" not in project_path and ".json" not in project_path:
+            project_path = f"projects/{project_path}.json"
     return [project_data]
 
 
