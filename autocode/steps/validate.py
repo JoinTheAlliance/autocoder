@@ -22,5 +22,13 @@ def validate(context):
     context["last_epoch"] = str(get_epoch() - 1)
     
     # TODO: run project-wide validation
+
+    # TODO: if no files, just skip directly to create entrypoint
+
+    # if files, run validation on each file, then run tests, then run main on the entrypoint
+
+    # store text for any files that changed this epoch
+
+    # 
     
     return context

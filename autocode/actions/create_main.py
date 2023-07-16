@@ -1,4 +1,5 @@
 # entrypoint for a project
+# TODO: rewrite prompt
 
 from easycompletion import openai_function_call
 from autocode.helpers.imports import install_imports

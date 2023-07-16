@@ -1,4 +1,3 @@
-import json
 import os
 from dotenv import load_dotenv
 from pyfiglet import Figlet
@@ -75,12 +74,10 @@ def print_logo():
 #         else:
 #             break
 
-def create_initialization_step(project_path):
+def create_initialization_step(project_data):
     # load the json file at the project path
-    project_data = json.load(open(project_path + "/project.json"))
     def initialize(context):
-        if context is None:
-            context = {}
+        context = {}
         # for every key in project data, add it to the context
         for key in project_data:
             context[key] = project_data[key]
@@ -88,10 +85,10 @@ def create_initialization_step(project_path):
     return initialize
 
 
-def main(project_path):
+def main(project_data):
     print_logo()
     import_actions("./autocode/actions")
-    initialize = create_initialization_step(project_path)
+    initialize = create_initialization_step(project_data)
 
     loop_dict = start(
         [
