@@ -19,8 +19,8 @@ def terminal():
     project_path = None
     project_data = None
 
-    if "--project_path" in sys.argv:
-        project_path = sys.argv[sys.argv.index("--project_path") + 1]
+    if "--project" in sys.argv:
+        project_path = sys.argv[sys.argv.index("--project") + 1]
 
     while not os.environ.get("OPENAI_API_KEY"):
         print("OPENAI_API_KEY env var is not set. Enter it here:")
@@ -72,6 +72,7 @@ def terminal():
     else:
         if "/" not in project_path and ".json" not in project_path:
             project_path = f"projects/{project_path}.json"
+            project_data = json.load(open(project_path))
     return [project_data]
 
 

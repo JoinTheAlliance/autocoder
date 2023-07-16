@@ -6,8 +6,8 @@ from rich.console import Console
 from agentaction import import_actions
 from agentloop import start
 
-from autocode.steps import validate
-from autocode.steps import reason
+from autocode.steps import orient
+from autocode.steps import decide
 from autocode.steps import act
 
 # Suppress warning
@@ -78,6 +78,8 @@ def create_initialization_step(project_data):
     # load the json file at the project path
     def initialize(context):
         context = {}
+        print("project_data")
+        print(project_data)
         # for every key in project data, add it to the context
         for key in project_data:
             context[key] = project_data[key]
@@ -93,8 +95,8 @@ def main(project_data):
     loop_dict = start(
         [
             initialize,
-            validate,
-            reason,
+            orient,
+            decide,
             act,
         ]
     )
