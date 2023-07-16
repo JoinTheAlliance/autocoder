@@ -1,12 +1,9 @@
-from core.logger import log
-from core.imports import install_imports
-from core.model import use_language_model
-from core.code import strip_header, compose_header, save_code
+from easycompletion import openai_function_call
+from autocode.helpers.imports import install_imports
+from autocode.helpers.code import strip_header, compose_header, save_code
 
 
-def write_code(filename, goal):
-    log(filename, "*** GENERATING INITIAL EXPERIMENT")
-
+def create_new(filename, goal):
     # Store user message and response in chat history
     def write_code_prompt(goal):
         return (
@@ -20,12 +17,8 @@ def write_code(filename, goal):
             "The script should do the following:\n" + goal + "\n"
         )
 
-    print(filename, write_code_prompt(goal))
-
-    user_message = {"role": "user", "content": write_code_prompt(goal)}
-
     write_code_function = {
-        "name": "write_code",
+        "name": "create_new",
         "description": "Write a python script and save it to a filename",
         "parameters": {
             "type": "object",
@@ -51,19 +44,14 @@ def write_code(filename, goal):
     reasoning = None
     retries = 10
     retry_count = 0
-    log(filename, "*** CALLING GENERATION FUNCTION")
     while retry_count < retries:
-        log(filename, "*** EPOCH: " + str(retry_count + 1) + "/" + str(retries))
         retry_count += 1
-        arguments = use_language_model(
-            [user_message],
+        arguments = openai_function_call(
+            text=write_code_prompt(goal),
             functions=[write_code_function],
-            function_call={"name": "write_code"},
-            filename=filename,
         )
 
         if arguments is None:
-            log(filename, "INVALID GENERATION RESULT.")
             return
 
         response_type = arguments["response_type"]
@@ -72,16 +60,9 @@ def write_code(filename, goal):
             code = arguments["code"]
             break
         else:
-            log(filename, "INVALID GENERATION TYPE.")
-            log(filename, "GENERATION RESULT TYPE WAS: " + response_type.capitalize())
-            log(filename, "RECALIBRATING...")
             return
 
     if code is None:
-        log(
-            filename,
-            "INSTABILITY IN GENERATION RESULT. THE EXPERIMENT FAILED TO PRIME. PLEASE TRY AGAIN...",
-        )
         return
 
     code = compose_header(goal, reasoning) + strip_header(code)

@@ -17,7 +17,6 @@ def check_if_builtin(module_name):
 def install_imports(code):
     import_lines = get_imports(code)
     for line in import_lines:
-        print(f"ADDING PACKAGES TO SYSTEM: {line}")
         package = line.replace("import", "").strip()
         subprocess.call(["pip", "install", package])
         print(f"INSTALLED PACKAGE: {package}")

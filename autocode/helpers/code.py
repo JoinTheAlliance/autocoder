@@ -1,7 +1,5 @@
 import subprocess
 
-from core.logger import log
-
 def compose_header(goal, reasoning=None):
     header = "# GOAL:\n"
     header += "\n".join(["# " + line for line in goal.split("\n")])
@@ -52,19 +50,11 @@ def save_code(code, filename):
 
 
 def run_code(filename):
-    log(filename, "RUNNING SIMULATION")
-
     process = subprocess.Popen(
         ["python3", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     output, error = process.communicate()
     output = output.decode("utf-8")
     error = error.decode("utf-8")
-    if error:
-        log(filename, "Error occurred while running the code:")
-        log(filename, error)
-    else:
-        log(filename, "SIMULATION WAS SUCCESSFUL. Output:")
-        log(filename, output)
     return [error, output]
 

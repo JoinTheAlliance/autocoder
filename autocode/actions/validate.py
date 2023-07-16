@@ -1,8 +1,7 @@
 import os
-from core.model import use_language_model
-from core.logger import log
-from core.code import save_code, strip_header
-from core.validation import validate_file
+from easycompletion import openai_function_call
+from autocode.helpers.code import save_code, strip_header
+from autocode.helpers.validation import validate_file
 
 
 def validate_code(filename, goal, output):
@@ -23,7 +22,6 @@ def validate_code(filename, goal, output):
     success = validation["success"]
 
     if success == False:
-        log(filename, "VALIDATION OF THE EXPERIMENT FAILED.")
         return validation
 
     # TODO: revert code if validation fails and try again, otherwise call with the additional validation information
@@ -55,25 +53,16 @@ def validate_code(filename, goal, output):
         "```\nPlease return a boolean value indicating if the script is valid and implements the intended goal."
     )
 
-    log(filename, validate_prompt)
-
     retries = 10
     retry_count = 0
     arguments = None
     while retry_count < retries:
         retry_count += 1
-        log(filename, "*** CALLING VALIDATION FUNCTION")
-        arguments = use_language_model(
-            [
-                {"role": "user", "content": validate_prompt},
-            ],
-            functions=[validate_function],
-            function_call={"name": "validate_script"},
-            filename=filename,
+        arguments = openai_function_call(
+            text=validate_prompt, functions=[validate_function]
         )
 
         if arguments is None:
-            log(filename, "INVALID VALIDATION RESULT.")
             continue
 
         return {

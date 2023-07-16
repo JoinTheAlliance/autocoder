@@ -1,21 +1,19 @@
-from core.heal_code import heal_code
-from core.model import use_language_model
-from core.logger import log
+from easycompletion import openai_function_call
+from autocode.helpers.heal_code import heal_code
 
-from core.code import (
+from autocode.helpers.code import (
     compose_header,
     run_code,
     save_code,
     strip_header,
 )
 
-from core.validation import validate_file
+from autocode.helpers.validation import validate_file
 
-from core.imports import install_imports
+from autocode.helpers.imports import install_imports
 
 
 def improve_code(filename, goal, error):
-    log(filename, "ATTEMPTING IMPROVEMENT EXPERIMENT")
     code = open(filename).read()
     previous_code = code
 
@@ -50,7 +48,6 @@ def improve_code(filename, goal, error):
             "\n```\n" + code + "```\n"
             "I want to improve my code. My goal is:```\n" + goal
         )
-    log(filename, improvement_prompt)
 
     improve_code_function = {
         "name": "improve_code",
@@ -76,8 +73,6 @@ def improve_code(filename, goal, error):
         },
     }
 
-    user_message = {"role": "user", "content": improvement_prompt}
-
     previous_code = code
 
     retries = 10
@@ -90,19 +85,15 @@ def improve_code(filename, goal, error):
 
     while retry_count < retries:
         retry_count += 1
-        log(filename, "*** CALLING GENERATION FUNCTION")
-        arguments = use_language_model(
-            [user_message],
-            functions=[improve_code_function],
-            function_call={"name": "improve_code"},
-            filename=filename,
+        response = openai_function_call(
+            text=improvement_prompt,
+            functions=[improve_code_function]
         )
+        arguments = response["arguments"]
         if arguments is None:
-            log(filename, "INVALID GENERATION RESULT.")
             continue
 
         if "response_type" not in arguments:
-            log(filename, "INVALID GENERATION RESULT TYPE.")
             continue
 
         response_type = arguments["response_type"]
@@ -112,9 +103,6 @@ def improve_code(filename, goal, error):
         response_code = arguments["code"]
 
         if response_code is None:
-            log(filename, "INVALID GENERATION TYPE.")
-            log(filename, "GENERATION RESULT TYPE WAS: " + response_type.capitalize())
-            log(filename, "RECALIBRATING...")
             continue
 
         is_complete_script = (
@@ -128,13 +116,8 @@ def improve_code(filename, goal, error):
         )
 
         if is_complete_script is not True and response_type != "complete_script":
-            log(filename, "Invalid response type.")
             continue
         break
-
-    print("*** response_code:", response_code)
-    print("*** goal:", goal)
-    print("*** reasoning:", reasoning)
 
     code = compose_header(goal, reasoning) + strip_header(response_code)
     save_code(code, filename)
@@ -162,18 +145,12 @@ def improve_code(filename, goal, error):
     [error, output] = run_code(filename)
 
     if previous_code == code:
-        log(filename, "NO IMPROVEMENTS MADE AFTER HEALING.")
         return [False, error, output]
 
     if previous_code != code and previous_code != code_before_heal:
-        log(filename, "SOME IMPROVEMENTS MADE.")
         return [True, error, output]
 
     if error:
-        log(filename, "ERROR OCCURED WHILE RUNNING SIMULATION:")
-        log(filename, error)
         return [False, error, output]
     else:
-        log(filename, "SIMULATION RAN SUCCESSFULLY. OUTPUT:")
-        log(filename, output)
         return [True, error, output]

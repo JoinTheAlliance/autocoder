@@ -1,0 +1,8 @@
+python-dotenv
+agentmemory
+agentbrowser
+easycompletion
+agentaction
+agentloop
+pyfiglet
+rich

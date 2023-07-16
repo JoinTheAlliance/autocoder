@@ -1,6 +1,6 @@
 import os
 import sys
-from core.autocode import main
+from autocode.autocode import main
 
 
 def terminal():
@@ -11,11 +11,8 @@ def terminal():
                 key, value = line.strip().split("=", 1)
                 os.environ[key] = value
                 break
-    filename = None
     goal = None
 
-    if "--filename" in sys.argv:
-        filename = sys.argv[sys.argv.index("--filename") + 1]
     if "--goal" in sys.argv:
         goal = sys.argv[sys.argv.index("--goal") + 1]
 
@@ -30,15 +27,13 @@ def terminal():
                 f.write(f"OPENAI_API_KEY={api_key}")
             os.environ["OPENAI_API_KEY"] = api_key
 
-    if filename is None:
-        filename = input("Enter filename: ")
     if goal is None:
         goal = input("What do you want the script to do? Please be very detailed: ")
     return [goal, filename]
 
 
 [goal, filename] = terminal()
-main(goal, filename)
+main(goal)
 
 if __name__ == "__main__":
     # TESTS GO HERE

@@ -1,6 +1,6 @@
 import os
-from core.logger import log
-from core.code import (
+
+from autocode.helpers.code import (
     read_code,
     strip_header,
     compose_header,
@@ -8,8 +8,6 @@ from core.code import (
 
 
 def heal_code(filename, code, previous_code, goal, reasoning):
-    log(filename, "MERGING OUTPUT STATE WITH PREVIOUS STATE")
-
     code_backup = code
     code = strip_header(code)
     previous_code = strip_header(previous_code)
@@ -57,18 +55,15 @@ def heal_code(filename, code, previous_code, goal, reasoning):
             print("footer_snippet after:", footer_snippet)
 
         if footer_snippet is not None:
-            log(filename, "*** CONCATENING RESULT WITH PREVIOUS STATE")
             code = code + "\n" + footer_snippet
         else:
             code_lines = code_lines[: code_lines.index(footer_line)]
             code = "\n".join(code_lines) + "\n" + footer
-            log(filename, "*** REPLACING TAIL OF PREVIOUS STATE WITH RESULT")
     if new_code_has_footer is False and previous_code_has_footer is False:
         code = (
             code
             + "\n\nif __name__ == '__main__':\n    # TODO: ADD TESTS HERE\n    assert(False)"
         )
-        log(filename, "*** ATTACHING INITIALIZATION TAIL TO PREVIOUS STATE")
 
     import_lines = [line for line in code.split("\n") if line.startswith("import")]
     from_import_lines = [line for line in code.split("\n") if line.startswith("from")]
@@ -111,10 +106,6 @@ def heal_code(filename, code, previous_code, goal, reasoning):
     previous_code_has_imports = len(previous_import_lines) > 0
 
     if new_code_has_imports == False and previous_code_has_imports == False:
-        log(
-            filename,
-            "*** MERGE FAILED: NO HEADER INFORMATION DETECTED IN EITHER STATE",
-        )
         return {"code": code_backup, "new_imports": None, "success": False}
 
     new_imports = new_code_has_imports == True and previous_code_has_imports == False
@@ -129,7 +120,6 @@ def heal_code(filename, code, previous_code, goal, reasoning):
         )
 
     if new_imports == True:
-        log(filename, "*** INTEGRATING STATE HEADERS")
         new_imports = set(import_lines)
         code_lines = [line for line in code_lines if not line.startswith("import")] + [
             line for line in code_lines if not line.startswith("from")
@@ -148,7 +138,6 @@ def heal_code(filename, code, previous_code, goal, reasoning):
 
     # if there is a ... in the code, and it's not in a comment, then we probably lost some code
     if "..." in code and "#" not in code.split("...")[0]:
-        log(filename, "*** MERGE FAILED: CODE WAS LOST")
         return {
             "code": code_backup,
             "new_imports": new_imports,
@@ -156,10 +145,7 @@ def heal_code(filename, code, previous_code, goal, reasoning):
         }
 
     if code == code_backup:
-        log(filename, "*** MERGE HAD NO RESULT, GENERATIONS ARE IDENTICAL")
         return {"code": code, "new_imports": new_imports, "success": False}
-    if code != code_backup:
-        log(filename, "*** MERGE SUCCEEDED")
 
     return {"code": code, "new_imports": new_imports, "success": True}
 

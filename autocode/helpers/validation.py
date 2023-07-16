@@ -1,6 +1,7 @@
 import ast
 import subprocess
-from core.code import read_code
+from autocode.helpers.code import read_code
+
 
 def is_runnable(filename):
     try:
@@ -83,7 +84,9 @@ def validate_file(filename):
             "explanation": "The file doesn't have any functions. Please encapsulate all code inside functions.",
         }
 
-    if "if __name__ == '__main__':" not in read_code(filename) and 'if __name__ == "__main__":' not in read_code(filename):
+    if "if __name__ == '__main__':" not in read_code(
+        filename
+    ) and 'if __name__ == "__main__":' not in read_code(filename):
         return {
             "success": False,
             "revert": False,
