@@ -53,9 +53,14 @@ def terminal():
             with open(project_path, "w") as f:
                 json.dump(project_data, f)
         elif project_path.lower().startswith("e"):
-            project_path = input("What is the path of your project file? ")
+            project_path = input("What is the name or path of your project file? ")
+
+            # if project_path doesn't contain any "/" or ".json", its a project name
+            if "/" not in project_path and ".json" not in project_path:
+                project_path = f"projects/{project_path}.json"
+
             if os.path.exists(project_path) == False:
-                print("That file does not exist.")
+                print("That project does not exist.")
                 project_path = None
                 sys.exit(1)
         else:
