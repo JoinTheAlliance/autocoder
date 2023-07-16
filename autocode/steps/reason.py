@@ -3,10 +3,9 @@ from easycompletion import (
     compose_function,
 )
 
-from agentevents import create_event
 from easycompletion import openai_function_call
 
-decision_prompt = """Current Epoch: {{epoch}}
+reasoning_prompt = """Current Epoch: {{epoch}}
 The current time is {{current_time}} on {{current_date}}.
 {{relevant_knowledge}}
 {{events}}
@@ -26,20 +25,20 @@ Your task:
 """
 
 
-def compose_decision_function():
+def compose_reasoning_function():
     """
-    This function defines the structure and requirements of the 'decide' function to be called in the 'Decide' stage of the OODA loop.
+    This function defines the structure and requirements of the 'reason' function to be called in the 'Decide' stage of the OODA loop.
 
     Returns:
-        dict: A dictionary containing the details of the 'decide' function, such as its properties, description, and required properties.
+        dict: A dictionary containing the details of the 'reason' function, such as its properties, description, and required properties.
     """
     return compose_function(
-        name="decide_action",
+        name="reason_action",
         description="Decide which action to take next.",
         properties={
             "assistant_reasoning": {
                 "type": "string",
-                "description": "The reasoning behind the decision. Why did you choose this action? Should be written from your perspective, as the assistant, telling the user why you chose this action.",
+                "description": "The reasoning behind the reasoning. Why did you choose this action? Should be written from your perspective, as the assistant, telling the user why you chose this action.",
             },
             "action_name": {
                 "type": "string",
@@ -54,19 +53,19 @@ def compose_decision_function():
     )
 
 
-def decide(context):
+def reason(context):
     """
-    This function serves as the 'Decide' stage in the OODA loop. It uses the current context data to decide which action should be taken next.
+    This function serves as the 'Decide' stage in the OODA loop. It uses the current context data to reason which action should be taken next.
 
     Args:
         context (dict): The dictionary containing data about the current state of the system.
 
     Returns:
-        dict: The updated context dictionary after the 'Decide' stage, including the selected action and reasoning behind the decision.
+        dict: The updated context dictionary after the 'Decide' stage, including the selected action and reasoning behind the reasoning.
     """
     response = openai_function_call(
-        text=compose_prompt(decision_prompt, context),
-        functions=compose_decision_function()
+        text=compose_prompt(reasoning_prompt, context),
+        functions=compose_reasoning_function()
     )
 
     # Add the action reasoning to the context object
@@ -74,5 +73,5 @@ def decide(context):
     reasoning_header = "Action Reasoning:"
     context["reasoning"] = reasoning_header + "\n" + reasoning + "\n"
     context["action_name"] = response["arguments"]["action_name"]
-    create_event(reasoning, type="reasoning")
+    print(reasoning)
     return context

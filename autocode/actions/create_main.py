@@ -1,9 +1,11 @@
+# entrypoint for a project
+
 from easycompletion import openai_function_call
 from autocode.helpers.imports import install_imports
 from autocode.helpers.code import strip_header, compose_header, save_code
 
 
-def create_new(filename, goal):
+def create_main(filename, goal):
     # Store user message and response in chat history
     def write_code_prompt(goal):
         return (
@@ -18,7 +20,7 @@ def create_new(filename, goal):
         )
 
     write_code_function = {
-        "name": "create_new",
+        "name": "create_main",
         "description": "Write a python script and save it to a filename",
         "parameters": {
             "type": "object",

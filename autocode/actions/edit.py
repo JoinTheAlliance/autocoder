@@ -1,3 +1,5 @@
+# TODO: edit the edit prompt
+
 from easycompletion import openai_function_call
 from autocode.helpers.heal_code import heal_code
 
@@ -13,12 +15,12 @@ from autocode.helpers.validation import validate_file
 from autocode.helpers.imports import install_imports
 
 
-def improve_code(filename, goal, error):
+def edit(filename, goal, error):
     code = open(filename).read()
     previous_code = code
 
     # Improvement prompt for loop
-    improvement_prompt = (
+    edit_prompt = (
         "Always give the complete script, including imports and tests.\n"
         "Always wrap your code in a function so that it can be used modularly and imported into other scripts. Call your main function at the end of the script, in the __name__ == '__main__'.\n"
         "NEVER use # ... to abbreviate or leave anything code out. Always respond with a complete script, not a snippet, explanation or plan."
@@ -34,23 +36,9 @@ def improve_code(filename, goal, error):
         + "```\n"
         "Please improve my code.```\n"
     )
-
-    # Improvement prompt on existing script
-    if error is None or error == "":
-        improvement_prompt = (
-            "Always give the complete script, including imports and tests.\n"
-            "Always wrap your code in a function so that it can be used modularly and imported into other scripts. Call your main function at the end of the script, in the __name__ == '__main__'.\n"
-            "NEVER use # ... to abbreviate or leave anything code out. Always respond with a complete script, not a snippet, explanation or plan.\n"
-            "Your response should start with an import statement and end with tests to validate your code.\n"
-            "Please add or update any tests to make sure these changes work. Tests should be simple and use the assert keyword and only run if __name__ == '__main__' at the bottom of the script.\n"
-            + "```\nPlease improve the code to meet my goals, and rewrite the entire the script with the changes. Include all code, including imports, and tests. The script should run without errors, all tests should print their output to the console, and the last line of code should print 'All tests complete!'"
-            + "I have this code:\n"
-            "\n```\n" + code + "```\n"
-            "I want to improve my code. My goal is:```\n" + goal
-        )
-
+    
     improve_code_function = {
-        "name": "improve_code",
+        "name": "edit",
         "description": "Improve the code",
         "parameters": {
             "type": "object",
@@ -61,7 +49,7 @@ def improve_code(filename, goal, error):
                 },
                 "reasoning": {
                     "type": "string",
-                    "description": "The reasoning and explanation for what needed improvement in the script that is being fixed with the new code",
+                    "description": "The reasoning and explanation for what needed edit in the script that is being fixed with the new code",
                 },
                 "response_type": {
                     "type": "string",
@@ -86,7 +74,7 @@ def improve_code(filename, goal, error):
     while retry_count < retries:
         retry_count += 1
         response = openai_function_call(
-            text=improvement_prompt,
+            text=edit_prompt,
             functions=[improve_code_function]
         )
         arguments = response["arguments"]
@@ -134,7 +122,7 @@ def improve_code(filename, goal, error):
         soft_validation = validate_file(filename)
         soft_validation_success = soft_validation["success"]
         if soft_validation_success == True:
-            response = heal_code(filename, code, previous_code, goal, reasoning)
+            response = heal_code(code, previous_code, goal, reasoning)
             if response["success"]:
                 code = response["code"]
                 should_install_imports = response["new_imports"]

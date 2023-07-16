@@ -7,7 +7,7 @@ from autocode.helpers.code import (
 )
 
 
-def heal_code(filename, code, previous_code, goal, reasoning):
+def heal_code(code, previous_code, goal, reasoning):
     code_backup = code
     code = strip_header(code)
     previous_code = strip_header(previous_code)
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     create_test_file("new.py", imports, footer)
 
     result = heal_code(
-        "test1", read_code("new.py"), read_code("old.py"), "goal", "reasoning"
+       read_code("new.py"), read_code("old.py"), "goal", "reasoning"
     )
     assert result["success"] == True, f"Test 1 failed with {result}"
 

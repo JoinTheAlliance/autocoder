@@ -25,11 +25,11 @@ To run with a different model
 python start.py --model <model_name>
 ```
 
-Type in the name of the file -- you can select one that exists, or a new file. Give instructions for what you want to do-- either improvements to an existing file, or instructions for a new file. Let it cook for a while, then give it a try once the task is done.
+Type in the name of the file -- you can select one that exists, or a new file. Give instructions for what you want to do-- either edits to an existing file, or instructions for a new file. Let it cook for a while, then give it a try once the task is done.
 
 To self-improve autocode
 ```
 python start.py --filename core/utils.py --goal "Improve the autocode program by adding robust tests for each function, as well as descriptive docstrings."
 ```
 
-If your improvements are good, please submit a pull request.
+If your edits are good, please submit a pull request.

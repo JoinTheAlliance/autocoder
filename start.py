@@ -1,6 +1,6 @@
 import os
 import sys
-from autocode.autocode import main
+from autocode.main import main
 
 
 def terminal():

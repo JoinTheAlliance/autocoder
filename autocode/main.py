@@ -1,19 +1,15 @@
+import json
 import os
 from dotenv import load_dotenv
 from pyfiglet import Figlet
 from rich.console import Console
 
 from agentaction import import_actions
-from agentmemory import wipe_all_memories
-from agentloop import (
-    start as start_loop,
-    create_default_context,
-    create_context_builders,
-)
+from agentloop import start
 
-from autocode.steps import act
-from autocode.steps import reason
 from autocode.steps import validate
+from autocode.steps import reason
+from autocode.steps import act
 
 # Suppress warning
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
@@ -33,29 +29,76 @@ def print_logo():
     console.print("Starting...\n", style="BRIGHT_BLACK")
 
 
-def start(
-    steps=None,
-    actions_dir="./autocode/actions",
-    context_dir="./autocode/context",
-    seed_data=None,
-    reset=False,
-):
-    print_logo()
+# old loop
 
-    if steps is None:
-        context_step = create_context_builders(context_dir)
-        steps = [
-            create_default_context,
+# from autocode.helpers.code import run_code, save_code
+# from autocode.helpers.validation import file_exists
+# from autocode.actions.validate import validate_code
+# from autocode.actions.edit import edit
+# from autocode.actions.create_main import create_main
+
+# def main(goal, filename):
+#     if file_exists(filename) == False:
+#         code = create_main(filename, goal)
+
+#     # read the code
+#     original_code = open(filename).read()
+#     [error, _] = run_code(filename)
+#     validation_passed = False
+#     while True:
+#         # always run at least once
+#         if validation_passed == False and error:
+#             [success, error, output] = edit(filename, goal, error)
+
+#             # something went wrong, feed the error back into the model and run it again
+#             if error:
+#                 continue
+
+#             validation = validate_code(filename, goal, output)
+
+#             # passed validation, finish up
+#             if validation["success"]:
+#                 validation_passed = True
+#                 error = None
+#                 break
+#             # validation failed
+#             else:
+#                 error = validation["explanation"]
+#                 if error is None and success is False:
+#                     error = output
+#                     continue
+#                 # if revert is true, revert to the last version of the code
+#                 if validation["revert"]:
+#                     save_code(original_code, filename)
+#                     continue
+#                 continue
+#         else:
+#             break
+
+def create_initialization_step(project_path):
+    # load the json file at the project path
+    project_data = json.load(open(project_path + "/project.json"))
+    def initialize(context):
+        if context is None:
+            context = {}
+        # for every key in project data, add it to the context
+        for key in project_data:
+            context[key] = project_data[key]
+        return context
+    return initialize
+
+
+def main(project_path):
+    print_logo()
+    import_actions("./autocode/actions")
+    initialize = create_initialization_step(project_path)
+
+    loop_dict = start(
+        [
+            initialize,
             validate,
             reason,
             act,
         ]
-
-    if reset:
-        wipe_all_memories()
-
-    if actions_dir is not None:
-        import_actions(actions_dir)
-
-    loop_dict = start_loop(steps)
+    )
     return loop_dict

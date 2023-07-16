@@ -41,10 +41,14 @@ def file_exists(filename):
         return False
 
 
-def count_lines(filename):
+def count_lines(filename, exclude_comments=True, exclude_empty_lines=True):
     file = open(filename, "r")
     lines = file.readlines()
     file.close()
+    if exclude_comments:
+        lines = [line for line in lines if not line.startswith("#")]
+    if exclude_empty_lines:
+        lines = [line for line in lines if line.strip() != ""]
     return len(lines)
 
 
@@ -56,7 +60,7 @@ def validate_file(filename):
             "explanation": "The file doesn't have any runnable code in it.",
         }
 
-    if count_lines(filename) == 1 and len(read_code(filename)) > 50:
+    if count_lines(filename) == 1 or len(read_code(filename)) > 50:
         return {
             "success": False,
             "revert": True,
@@ -82,22 +86,6 @@ def validate_file(filename):
             "success": False,
             "revert": False,
             "explanation": "The file doesn't have any functions. Please encapsulate all code inside functions.",
-        }
-
-    if "if __name__ == '__main__':" not in read_code(
-        filename
-    ) and 'if __name__ == "__main__":' not in read_code(filename):
-        return {
-            "success": False,
-            "revert": False,
-            "explanation": "The file doesn't have a __name__ == '__main__' section. The actual logic should be modular and wrapped in functions, but only called when __name__ == '__main__'. Please add a __name__ == '__main__' section to the bottom of the file and move any tests or invocation of functions to that section.",
-        }
-
-    if "assert" not in read_code(filename):
-        return {
-            "success": False,
-            "revert": False,
-            "explanation": "The file doesn't have any tests. Please add tests using 'assert' inside the __name__ == '__main__' section at the end of the script. Write tests using python's assert keyword.",
         }
 
     if "# TODO" in read_code(filename):
