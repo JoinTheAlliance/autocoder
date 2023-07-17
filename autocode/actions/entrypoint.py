@@ -1,77 +1,51 @@
-# entrypoint for a project
-# TODO: rewrite prompt
-
-from easycompletion import openai_function_call
-from autocode.helpers.imports import install_imports
-from autocode.helpers.code import strip_header, compose_header, save_code
+from easycompletion import compose_function, compose_prompt
 
 
-def entrypoint(filename, goal):
-    # Store user message and response in chat history
-    def write_code_prompt(goal):
-        return (
-            "Write a python script which will be named " + filename + "\n"
-            "The script should include all code and be extremely detailed, including imports and tests.\n"
-            "NEVER use # ... to abbreviate or leave anything code out. Always respond with a complete script, not a snippet, explanation or plan.\n"
-            "Fill in any incomplete code and remove unnecessary or dangling comments. Replace any TODOs or implied to-dos with code. Do not use any comments, and remove any comments that aren't important or aren't related to code.\n"
-            "Your response should start with an import statement and end with tests to validate your code.\n"
-            "Tests should be simple and use the assert keyword and only run if __name__ == '__main__' at the bottom of the python script. All tests should print their result.\n"
-            "The last line of code should print 'All tests complete!'.\n"
-            "The script should do the following:\n" + goal + "\n"
-        )
+prompt = """ENTRYPOINT PROMPT GOES HERE"""
 
-    write_code_function = {
-        "name": "entrypoint",
-        "description": "Write a python script and save it to a filename",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "reasoning": {
-                    "type": "string",
-                    "description": "The explanation for what the script is supposed to do",
+
+def builder(context):
+    return compose_prompt(prompt, context)
+
+
+def handler(arguments, context):
+    # arguments are plan, code, pakages, test
+    # print plan
+    # save code to main.py
+    # save test to main_test.py
+    # pip install packages
+    pass
+
+
+def get_actions():
+    return [
+        {
+            "function": compose_function(
+                name="create_script",
+                description="Create a new script called main.py, as well as a test for main.py named main_test.py.",
+                properties={
+                    "plan": {
+                        "type": "string",
+                        "description": "Write out a plan, the reason about whether or not it is the best approach. If it is not the best approach, write out a better plan and explain your reasoning.",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The full code for main.py, including all imports and code",
+                    },
+                    "packages": {
+                        "type": "array",
+                        "description": "A list of packages to install, derived from the imports of the code. Each package should be a string, e.g. ['numpy', 'pandas']",
+                        "items": {"type": "string"},
+                    },
+                    "test": {
+                        "type": "string",
+                        "description": "The full code for main_test.py, including all imports and code. Tests should use a functional style, use the assert keyword and be prepared to work with pytest.",
+                    },
                 },
-                "code": {
-                    "type": "string",
-                    "description": "The code for a complete script file, should include everything, including imports and tests and all code",
-                },
-                "response_type": {
-                    "type": "string",
-                    "enum": ["complete_script", "snippet", "example", "abbreviated"],
-                    "description": "The type of code response. Is the assistant is responding with a complete script that will run, use 'complete_script'. If the assistant is providing a snippet or example that is not a complete script, use 'snippet' or 'abbreviated'.",
-                },
-            },
-            "required": ["reasoning", "code", "response_type"],
-        },
-    }
-    code = None
-    reasoning = None
-    retries = 10
-    retry_count = 0
-    while retry_count < retries:
-        retry_count += 1
-        arguments = openai_function_call(
-            text=write_code_prompt(goal),
-            functions=[write_code_function],
-        )
-
-        if arguments is None:
-            return
-
-        response_type = arguments["response_type"]
-        if response_type == "complete_script":
-            reasoning = arguments["reasoning"]
-            code = arguments["code"]
-            break
-        else:
-            return
-
-    if code is None:
-        return
-
-    code = compose_header(goal, reasoning) + strip_header(code)
-
-    save_code(code, filename)
-
-    install_imports(code)
-
-    return code
+                required_properties=["plan", "code", "packages", "test"],
+            ),
+            "prompt": prompt,
+            "builder": builder,
+            "handler": handler
+        }
+    ]

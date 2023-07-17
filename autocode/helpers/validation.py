@@ -10,27 +10,54 @@ def is_runnable(filename):
         return False
 
 
-def has_functions_called(filename):
-    with open(filename, "r") as file:
-        code = file.read()
+def contains_function_definition(code):
+    """Checks if a string of Python code contains any function definitions."""
 
-    tree = ast.parse(code)
-
-    for node in ast.iter_child_nodes(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+    def visit(node):
+        """Recursively visit nodes in the AST."""
+        if isinstance(node, ast.FunctionDef):
+            # If we're at a function definition node, return True
             return True
+        else:
+            # For all other nodes, recursively visit their children and return True if any of them return True
+            for child in ast.iter_child_nodes(node):
+                if visit(child):
+                    return True
+        # If no function definition was found, return False
+        return False
 
-    for node in ast.walk(tree):
-        if isinstance(node, ast.If):
-            condition = ast.unparse(node.test).strip()
-            if condition == '__name__ == "__main__"':
-                for sub_node in ast.walk(node):
-                    if isinstance(sub_node, ast.Call) and isinstance(
-                        sub_node.func, ast.Name
-                    ):
-                        return True
+    try:
+        tree = ast.parse(code)
+        return visit(tree)
+    except SyntaxError:
+        return False
 
-    return False
+
+def has_functions_called(code):
+    """Checks if a string is valid Python code and if it performs a function call at root level."""
+
+    def visit(node, inside_function_def=False):
+        """Recursively visit nodes in the AST."""
+        if isinstance(node, ast.FunctionDef):
+            # If we're at a function definition node, recursively visit its children without updating the result
+            for child in ast.iter_child_nodes(node):
+                visit(child, inside_function_def=True)
+        elif isinstance(node, ast.Call) and not inside_function_def:
+            # If we're at a call node and it's not inside a function definition, return True
+            return True
+        else:
+            # For all other nodes, recursively visit their children and return True if any of them return True
+            for child in ast.iter_child_nodes(node):
+                if visit(child, inside_function_def):
+                    return True
+        # If no function call at the root level was found, return False
+        return False
+
+    try:
+        tree = ast.parse(code)
+        return visit(tree)
+    except SyntaxError:
+        return False
 
 
 def file_exists(filename):
@@ -56,13 +83,17 @@ def validate_file(filename):
             "success": False,
             "error": "The file doesn't have any code in it.",
         }
-    
+
     if not is_runnable(filename):
         return {
             "success": False,
             "error": "The file is not runnable, or didn't compile.",
         }
-
+    if has_functions_called(code) is False and contains_function_definition is False:
+        return {
+            "success": False,
+            "error": "The file doesn't call any functions or have any functions. Please make sure the code meets the specifications and goals.",
+        }
     if count_lines(code) == 1 and len(code) > 50:
         return {
             "success": False,

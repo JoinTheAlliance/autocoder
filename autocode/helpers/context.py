@@ -152,35 +152,3 @@ def backup_project(context):
     epoch = context["epoch"]
     context["backup"] = zip_python_files(project_dir, project_name, epoch)
     return context
-
-
-def orient(context):
-    """
-    This function serves as the 'Orient' stage in the OODA loop. It uses the current context data to summarize the previous epoch and formulate a plan for the next steps.
-
-    Args:
-        context (dict): The dictionary containing data about the current state of the system.
-
-    Returns:
-        dict: The updated context dictionary after the 'Orient' stage, including the summary of the last epoch, relevant knowledge, available actions, and so on.
-    """
-    context = get_file_count(context)
-
-    # New path
-    if context["file_count"] == 0:
-        return context
-
-    context = backup_project(context)
-
-    # Collect existing file name
-    context = collect_files(context)
-
-    context = validate_files(context)
-
-    context = run_tests(context)
-
-    context = run_main(context)
-
-    context = read_and_format_code(context)
-
-    return context

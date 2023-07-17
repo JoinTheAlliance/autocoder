@@ -20,15 +20,14 @@ def act(context):
     action_name = context["action_name"]
     action = get_action(action_name)
 
+    # TODO: Handle the case where the action is not found
+    # IMO we should retry 5 times and then give up
     if action is None:
         return {"error": f"Action {action_name} not found"}
 
     response = openai_function_call(
-        text=compose_action_prompt(action, context),
-        functions=action["function"]
+        text=compose_action_prompt(action, context), functions=action["function"]
     )
 
-    # TODO: check if the action is the last as last time
-
-    use_action(response["function_name"], response["arguments"])
+    use_action(response["function_name"], response["arguments"], context)
     return context

@@ -1,144 +1,223 @@
-# TODO: edit the edit prompt
+from easycompletion import compose_function, compose_prompt, openai_function_call
 
-from easycompletion import openai_function_call
-from autocode.helpers.heal_code import heal_code
+edit_prompt = """
+Always give the complete script, including imports and tests.
+Always wrap your code in a function so that it can be used modularly and imported into other scripts. Call your main function at the end of the script, in the __name__ == '__main__'.\n
+NEVER use # ... to abbreviate or leave anything code out. Always respond with a complete script, not a snippet, explanation or plan.
+Your response should start with an import statement and end with tests to validate your code.
+Please add or update any tests to make sure these changes work. Tests should use the assert keyword and they should run under __name__ == '__main__' at the bottom of the script.
 
-from autocode.helpers.code import (
-    compose_header,
-    run_code,
-    save_code,
-    strip_header,
-)
+My goal is:
+{{goal}}
 
-from autocode.helpers.validation import validate_file
+Please fix the code and write the entire the script with the changes. Include all code, including imports, tests, all functions, everything. The script should run without errors, all tests should print their results to the console. The last line of code should print 'All tests complete!'.
+I have this code:
+```
+{{code}}
+```
+I get this error:
+```
+{{error}}
+```
+\n
+Please improve my code.
+"""
 
-from autocode.helpers.imports import install_imports
+
+def write_complete_script_handler(arguments, context):
+    pass
 
 
-def edit(filename, goal, error):
-    code = open(filename).read()
-    previous_code = code
+def insert_code_handler(arguments, context):
+    pass
 
-    # Improvement prompt for loop
-    edit_prompt = (
-        "Always give the complete script, including imports and tests.\n"
-        "Always wrap your code in a function so that it can be used modularly and imported into other scripts. Call your main function at the end of the script, in the __name__ == '__main__'.\n"
-        "NEVER use # ... to abbreviate or leave anything code out. Always respond with a complete script, not a snippet, explanation or plan."
-        "Your response should start with an import statement and end with tests to validate your code."
-        "Please add or update any tests to make sure these changes work. Tests should use the assert keyword and they should run under __name__ == '__main__' at the bottom of the script."
-        "My goal is:```\n"
-        + goal
-        + "```\nPlease fix the code and write the entire the script with the changes. Include all code, including imports, tests, all functions, everything. The script should run without errors, all tests should print their results to the console. The last line of code should print 'All tests complete!'."
-        + "```\nI have this code:\n```"
-        + code
-        + "```\nI get this error:\n```"
-        + error
-        + "```\n"
-        "Please improve my code.```\n"
-    )
-    
-    improve_code_function = {
-        "name": "edit",
-        "description": "Improve the code",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "description": "The complete script, including imports, all functions and tests.",
+
+def replace_code_handler(arguments, context):
+    pass
+
+
+def remove_code_handler(arguments, context):
+    pass
+
+
+def replace_function_handler(arguments, context):
+    pass
+
+
+def write_snippet_handler(arguments, context):
+    pass
+
+
+def create_new_file_handler(arguments, context):
+    pass
+
+
+def get_edit_actions():
+    return [
+        {
+            "function": compose_function(
+                name="insert_code",
+                description="Insert a snippet of code before a line.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "What does this code do? Why are you inserting it?",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The snippet of code to insert.",
+                    },
+                    "line_number": {
+                        "type": "number",
+                        "description": "The line number to insert the code before.",
+                    },
                 },
-                "reasoning": {
-                    "type": "string",
-                    "description": "The reasoning and explanation for what needed edit in the script that is being fixed with the new code",
-                },
-                "response_type": {
-                    "type": "string",
-                    "enum": ["complete_script", "snippet"],
-                    "description": "The type of code response. Is the assistant is responding with a complete script that will run, use 'complete'. If the assistant is providing a snippet or example that is not a complete script, use 'snippet'.",
-                },
-            },
-            "required": ["reasoning", "code", "response_type"],
+                required_properties=["reasoning", "code", "line_number"],
+            ),
+            "handler": insert_code_handler,
         },
-    }
+        {
+            "function": compose_function(
+                name="replace_code",
+                description="Replace some lines with a snippet of code. This is useful for replacing a function with a new implementation, for example. Requires an input and output line number.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Which code are you replacing? What does the new code do? Why are you replacing it?",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The snippet of code to replace the existing code with.",
+                    },
+                    "start_line": {
+                        "type": "number",
+                        "description": "The start line number of the file where code is being replaced.",
+                    },
+                    "end_line": {
+                        "type": "number",
+                        "description": "The end line number of the file where code is being replaced.",
+                    },
+                },
+                required_properties=["reasoning", "code", "start_line", "end_line"],
+            ),
+            "handler": replace_code_handler,
+        },
+        {
+            "function": compose_function(
+                name="write_complete_script",
+                description="Writes a complete script.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "What does this code do? Why are you rewriting it? How will this change the behavior of the script?",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The complete script to write.",
+                    },
+                },
+                required_properties=["reasoning", "code"],
+            ),
+            "handler": write_complete_script_handler,
+        },
+        {
+            "function": compose_function(
+                name="remove_code",
+                description="Removes a range of lines from the code.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Why are you removing this code?",
+                    },
+                    "start_line": {
+                        "type": "number",
+                        "description": "The start line number of the code to remove.",
+                    },
+                    "end_line": {
+                        "type": "number",
+                        "description": "The end line number of the code to remove.",
+                    },
+                },
+                required_properties=["reasoning", "start_line", "end_line"],
+            ),
+            "handler": remove_code_handler,
+        },
+        {
+            "function": compose_function(
+                name="replace_function",
+                description="Replaces a function with new code.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Why are you replacing this function?",
+                    },
+                    "function_name": {
+                        "type": "string",
+                        "description": "The name of the function to replace.",
+                    },
+                    "new_code": {
+                        "type": "string",
+                        "description": "The new code to replace the function with.",
+                    },
+                },
+                required_properties=["reasoning", "function_name", "new_code"],
+            ),
+            "handler": replace_function_handler,
+        },
+        {
+            "function": compose_function(
+                name="write_snippet",
+                description="Writes a snippet of code, which aren't added to the code but are used to help the user write the complete script.",
+                properties={
+                    "explanation": {
+                        "type": "string",
+                        "description": "What does this code do? Why are you writing it?",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The snippet of code to write.",
+                    },
+                },
+                required_properties=["code"],
+            ),
+            "handler": write_snippet_handler,
+        },
+        {
+            "function": compose_function(
+                name="create_new_file",
+                description="Creates a new file.",
+                properties={
+                    "filename": {
+                        "type": "string",
+                        "description": "The name of the new file to create.",
+                    },
+                },
+                required_properties=["filename"],
+            ),
+            "handler": create_new_file_handler,
+        },
+    ]
 
-    previous_code = code
 
-    retries = 10
-    retry_count = 0
-    code = None
-    reasoning = None
-    arguments = None
-    response_code = None
-    response_type = None
-
-    while retry_count < retries:
-        retry_count += 1
-        response = openai_function_call(
-            text=edit_prompt,
-            functions=[improve_code_function]
-        )
-        arguments = response["arguments"]
-        if arguments is None:
-            continue
-
-        if "response_type" not in arguments:
-            continue
-
-        response_type = arguments["response_type"]
-
-        reasoning = arguments["reasoning"]
-
-        response_code = arguments["code"]
-
-        if response_code is None:
-            continue
-
-        is_complete_script = (
-            any(
-                [
-                    line.startswith("import") or line.startswith("from")
-                    for line in response_code.split("\n")
-                ]
+def edit_handler(arguments, context):
+    valid = False
+    while valid is False:
+        # call the edit validation prompt
+        valid = validate_edits(arguments, context)
+        if valid is True:
+            break
+        else:
+            # call the edit again
+            context = openai_function_call(
+                text=compose_prompt(edit_prompt, context),
+                functions=get_edit_actions(),
             )
-            and "__name__" in response_code or "main(" in response_code
-        )
 
-        if is_complete_script is not True and response_type != "complete_script":
-            continue
-        break
 
-    code = compose_header(goal, reasoning) + strip_header(response_code)
-    save_code(code, filename)
-
-    code_before_heal = code
-    [error, output] = run_code(filename)
-
-    should_install_imports = True
-
-    # pre-validate the code, basically catch the cases where we could easily fix the code
-    full_validation = validate_file(filename)
-    full_validation_success = full_validation["success"]
-    if error or full_validation_success == False:
-        soft_validation = validate_file(filename)
-        soft_validation_success = soft_validation["success"]
-        if soft_validation_success == True:
-            response = heal_code(code, previous_code, goal, reasoning)
-            if response["success"]:
-                code = response["code"]
-                should_install_imports = response["new_imports"]
-                save_code(code, filename)
-
-    if should_install_imports:
-        install_imports(code)
-    [error, output] = run_code(filename)
-
-    if previous_code == code:
-        return [False, error, output]
-
-    if previous_code != code and previous_code != code_before_heal:
-        return [True, error, output]
-
-    if error:
-        return [False, error, output]
-    else:
-        return [True, error, output]
+def get_actions():
+    return [
+        {
+            "function": get_edit_actions(),
+            "handler": edit_handler,
+        }
+    ]

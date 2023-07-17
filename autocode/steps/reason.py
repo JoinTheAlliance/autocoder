@@ -6,7 +6,7 @@ from easycompletion import (
 from easycompletion import openai_function_call
 
 
-decision_prompt = """
+reasoning_prompt = """
 Assistant Notes:
 - Do not ask if you can help. Do not ask how you can assist. Do not gather more information.
 - I will not repeat the same action unless it achieves some additional goal. I don't like getting stuck in loops or repeating myself.
@@ -25,20 +25,20 @@ Your task:
 """
 
 
-def compose_decision_function():
+def compose_reasoning_function():
     """
-    This function defines the structure and requirements of the 'decide' function to be called in the 'Decide' stage of the OODA loop.
+    This function defines the structure and requirements of the 'reason' function to be called in the 'Decide' stage of the OODA loop.
 
     Returns:
-        dict: A dictionary containing the details of the 'decide' function, such as its properties, description, and required properties.
+        dict: A dictionary containing the details of the 'reason' function, such as its properties, description, and required properties.
     """
     return compose_function(
-        name="decide_action",
+        name="reason_action",
         description="Decide which action to take next.",
         properties={
             "assistant_reasoning": {
                 "type": "string",
-                "description": "The reasoning behind the decision. Why did you choose this action? Should be written from your perspective, as the assistant, telling the user why you chose this action.",
+                "description": "The reasoning behind the reasoning. Why did you choose this action? Should be written from your perspective, as the assistant, telling the user why you chose this action.",
             },
             "action_name": {
                 "type": "string",
@@ -46,49 +46,54 @@ def compose_decision_function():
             },
             "user_reasoning": {
                 "type": "string",
-                "description": "Rewrite the assistant_reasoning from the perspective of the user. Rewrite your reasoning from my perspective, using 'I' instead of 'You'.",
+                "description": "Rewrite the assistant_reasoning from my perspective, as the user. Use 'I' statements instead of 'You'.",
             },
         },
-        required_properties=["action_name", "assistant_reasoning", "user_reasoning"],
+        required_properties=["assistant_reasoning", "action_name", "user_reasoning"],
     )
 
 
-def decide(context):
+def reason(context):
     """
-    This function serves as the 'Decide' stage in the OODA loop. It uses the current context data to decide which action should be taken next.
+    This function serves as the 'Decide' stage in the OODA loop. It uses the current context data to reason which action should be taken next.
 
     Args:
         context (dict): The dictionary containing data about the current state of the system.
 
     Returns:
-        dict: The updated context dictionary after the 'Decide' stage, including the selected action and reasoning behind the decision.
+        dict: The updated context dictionary after the 'Decide' stage, including the selected action and reasoning behind the reasoning.
     """
 
-    action = None
+    action_name = None
 
-    # TODO:
-
+    # If we have no files, go immediately to the entrypoint
     if context["file_count"] == 0:
         # new project
-        action = "entrypoint"
+        action_name = "entrypoint"
 
-    elif context["error"] is not None:
-        action = "edit"
+    # If we have an error, go immediately to the edit prompt
+    if context["main_success"] is False:
+        action_name = "edit"
 
-    if action is not None:
-        context["action_name"] = action
+    project_code = context["project_code"]
+    for file_dict in project_code:
+        # check if test_success or validation_success are False
+        if file_dict.get("test_success", None) is False:
+            action_name = "edit"
+        if file_dict.get("validation_success", None) is False:
+            action_name = "edit"
+
+    if action_name is not None:
+        context["action_name"] = action_name
         return context
 
     # Handle the auto case
-
     response = openai_function_call(
-        text=compose_prompt(decision_prompt, context),
-        functions=compose_decision_function(),
+        text=compose_prompt(reasoning_prompt, context),
+        functions=compose_reasoning_function(),
     )
 
     # Add the action reasoning to the context object
-    reasoning = response["arguments"]["user_reasoning"]
-    reasoning_header = "Action Reasoning:"
-    context["reasoning"] = reasoning_header + "\n" + reasoning + "\n"
+    context["action_reasoning"] = response["arguments"]["user_reasoning"]
     context["action_name"] = response["arguments"]["action_name"]
     return context
