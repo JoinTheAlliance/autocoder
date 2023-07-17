@@ -9,8 +9,7 @@ from agentevents import (
     increment_epoch,
 )
 
-from autocode.steps import orient
-from autocode.steps import decide
+from autocode.steps import reason
 from autocode.steps import act
 
 from autocode.helpers.context import (
@@ -59,7 +58,7 @@ def create_initialization_step(project_data):
         context = run_tests(context)
         context = run_main(context)
         context = read_and_format_code(context)
-        
+
         # for every key in project data, add it to the context
         for key in project_data:
             context[key] = project_data[key]
@@ -75,8 +74,7 @@ def main(project_data):
     loop_dict = start(
         [
             initialize,
-            orient,
-            decide,
+            reason,
             act,
         ]
     )
