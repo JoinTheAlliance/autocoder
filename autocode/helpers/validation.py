@@ -75,19 +75,19 @@ def count_lines(code, exclude_comments=True, exclude_empty_lines=True):
         lines = [line for line in lines if line.strip() != ""]
     return len(lines)
 
-
 def validate_file(filename):
-    code = open(filename, "r").read()
-    if count_lines(code) == 0:
-        return {
-            "success": False,
-            "error": "The file doesn't have any code in it.",
-        }
-
     if not is_runnable(filename):
         return {
             "success": False,
             "error": "The file is not runnable, or didn't compile.",
+        }
+    return validate_code(open(filename, "r").read())
+
+def validate_code(code):
+    if count_lines(code) == 0:
+        return {
+            "success": False,
+            "error": "The file doesn't have any code in it.",
         }
     if has_functions_called(code) is False and contains_function_definition is False:
         return {

@@ -1,3 +1,4 @@
+from agentaction import use_action
 from easycompletion import compose_function, compose_prompt, openai_function_call
 
 edit_prompt = """
@@ -198,7 +199,7 @@ def get_edit_actions():
         },
     ]
 
-
+# all fucked up
 def edit_handler(arguments, context):
     valid = False
     while valid is False:
@@ -208,10 +209,11 @@ def edit_handler(arguments, context):
             break
         else:
             # call the edit again
-            context = openai_function_call(
+            response = openai_function_call(
                 text=compose_prompt(edit_prompt, context),
                 functions=get_edit_actions(),
             )
+            use_action(response["function_name"], response["arguments"], context)
 
 
 def get_actions():
