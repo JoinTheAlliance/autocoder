@@ -1,6 +1,5 @@
 import ast
 import subprocess
-from autocode.helpers.code import read_code
 
 
 def is_runnable(filename):
@@ -41,10 +40,8 @@ def file_exists(filename):
         return False
 
 
-def count_lines(filename, exclude_comments=True, exclude_empty_lines=True):
-    file = open(filename, "r")
-    lines = file.readlines()
-    file.close()
+def count_lines(code, exclude_comments=True, exclude_empty_lines=True):
+    lines = code.split("\n")
     if exclude_comments:
         lines = [line for line in lines if not line.startswith("#")]
     if exclude_empty_lines:
@@ -53,53 +50,53 @@ def count_lines(filename, exclude_comments=True, exclude_empty_lines=True):
 
 
 def validate_file(filename):
+    code = open(filename, "r").read()
+    if count_lines(code) == 0:
+        return {
+            "success": False,
+            "error": "The file doesn't have any code in it.",
+        }
+    
     if not is_runnable(filename):
         return {
             "success": False,
-            "revert": True,
-            "explanation": "The file doesn't have any runnable code in it.",
+            "error": "The file is not runnable, or didn't compile.",
         }
 
-    if count_lines(filename) == 1 or len(read_code(filename)) > 50:
+    if count_lines(code) == 1 and len(code) > 50:
         return {
             "success": False,
-            "revert": True,
-            "explanation": "The file has more than 50 characters but only one line, probably one massive comment or something.",
+            "error": "The file has more than 50 characters but only one line, probably one massive comment or something.",
         }
 
-    if count_lines(filename) < 4:
+    if count_lines(code) < 4:
         return {
             "success": False,
-            "revert": True,
-            "explanation": "The file is not long enough to do much.",
+            "error": "The file is not long enough to do much.",
         }
 
-    if "import" not in read_code(filename):
+    if "import" not in code:
         return {
             "success": False,
-            "revert": True,
-            "explanation": "The file doesn't have any imports. Imports are needed to do anything useful. Please add some imports to the top of the file.",
+            "error": "The file doesn't have any imports. Imports are needed to do anything useful. Please add some imports to the top of the file.",
         }
 
-    if "def" not in read_code(filename):
+    if "def" not in code:
         return {
             "success": False,
-            "revert": False,
-            "explanation": "The file doesn't have any functions. Please encapsulate all code inside functions.",
+            "error": "The file doesn't have any functions. Please encapsulate all code inside functions.",
         }
 
-    if "# TODO" in read_code(filename):
+    if "TODO" in code:
         return {
             "success": False,
-            "revert": False,
-            "explanation": "The file has a TODO in it. Please remove the TODO before submitting.",
+            "error": "The file has a TODO in it. Please replace the TODO with real code or remove it.",
         }
 
-    if "..." in read_code(filename):
+    if "..." in code:
         return {
             "success": False,
-            "revert": False,
-            "explanation": "The file has a '...' in it. This indicates that it is not a complete file. Please respond with the complete script and do not omit any functions, code, tests or sections. Your response should include all code, including imports, and tests, not just changes to code.",
+            "error": "The file has a '...' in it. This indicates that it is not a complete file. Please respond with the complete script and do not omit any functions, code, tests or sections. Your response should include all code, including imports, and tests, not just changes to code.",
         }
 
     return {"success": True}

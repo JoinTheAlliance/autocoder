@@ -64,7 +64,6 @@ def decide(context):
         dict: The updated context dictionary after the 'Decide' stage, including the selected action and reasoning behind the decision.
     """
 
-
     action = None
 
     # TODO:
@@ -79,12 +78,12 @@ def decide(context):
     if action is not None:
         context["action_name"] = action
         return context
-    
+
     # Handle the auto case
 
     response = openai_function_call(
         text=compose_prompt(decision_prompt, context),
-        functions=compose_decision_function()
+        functions=compose_decision_function(),
     )
 
     # Add the action reasoning to the context object

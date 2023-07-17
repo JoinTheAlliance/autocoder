@@ -5,14 +5,9 @@ import fnmatch
 
 
 def count_files(dir):
-    len(
-        [
-            name
-            for name in os.listdir(dir)
-            if os.path.isfile(os.path.join(dir, name))
-        ]
-    )
-    
+    len([name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))])
+
+
 def file_tree_to_dict(startpath):
     file_tree = {}
     for root, dirs, files in os.walk(startpath):
@@ -48,10 +43,10 @@ def get_python_files(startpath):
             py_files.append(os.path.join(root, filename))
     return py_files
 
-def zip_python_files(project_dir, project_name, epoch):
 
+def zip_python_files(project_dir, project_name, epoch):
     # Check if ./.project_cache exists, create if not
-    cache_dir = Path('./.project_cache')
+    cache_dir = Path("./.project_cache")
     cache_dir.mkdir(exist_ok=True)
 
     # Check if "./.project_cache/{context["project_name"]}" dir exists, and create if not
@@ -62,10 +57,10 @@ def zip_python_files(project_dir, project_name, epoch):
     zip_file_path = project_cache_dir / f"{project_name}_{str(epoch)}.zip"
 
     # Create a zip file
-    with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(project_dir):
             for file in files:
-                if file.endswith('.py'):
+                if file.endswith(".py"):
                     # Get absolute path of the file
                     abs_file_path = os.path.join(root, file)
                     # Get relative path for storing in the zip
@@ -73,4 +68,3 @@ def zip_python_files(project_dir, project_name, epoch):
                     zipf.write(abs_file_path, arcname=rel_file_path)
 
     return zip_file_path
-
