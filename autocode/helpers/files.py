@@ -16,6 +16,8 @@ def count_files(dir):
     return count
 
 
+import os
+
 def get_full_path(filepath, project_dir):
     """
     Takes a filepath and a project directory, and constructs a full path based on the inputs.
@@ -34,24 +36,21 @@ def get_full_path(filepath, project_dir):
     if not directory_path:
         directory_path = "."
 
-    full_path = os.path.join(project_dir, directory_path)
-    if not os.path.exists(full_path):
-        proj_dirs = set(project_dir.split(os.path.sep))
-        dir_path_dirs = set(directory_path.split(os.path.sep))
-        overlap = proj_dirs & dir_path_dirs
-        if overlap:
-            overlap_dir = overlap.pop()
-            index = project_dir.split(os.path.sep).index(overlap_dir)
-            full_path = os.path.join(project_dir.split(os.path.sep)[0 : index + 1])
-            full_path = os.path.join(
-                full_path, directory_path.split(os.path.sep)[index + 1 :]
-            )
-        else:
-            os.makedirs(full_path)
+    # Calculate the common path between project_dir and directory_path
+    common_path = os.path.commonpath([project_dir, directory_path])
     
+    # Remove the common_path from directory_path and join it with project_dir
+    sub_path = directory_path.replace(common_path, '').lstrip(os.path.sep)
+    full_path = os.path.join(project_dir, sub_path)
+    
+    if not os.path.exists(full_path):
+        os.makedirs(full_path)
+
     full_path = os.path.join(full_path, filename)
     full_path = os.path.abspath(full_path)
     return full_path
+
+
 
 
 def file_tree_to_dict(startpath):

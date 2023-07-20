@@ -387,5 +387,6 @@ def step(context):
             action = f
             break
 
+    print('Running action "{}"'.format(action["function"]["name"]))
     context = action["handler"](arguments, context)
     return context
