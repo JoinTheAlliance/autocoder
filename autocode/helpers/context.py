@@ -88,12 +88,16 @@ def collect_files(context):
 
 def validate_files(context):
     project_code = context["project_code"]
+    project_validated = True
     for file_dict in project_code:
         file_path = file_dict["absolute_path"]
         validation = validate_file(file_path)
         file_dict["validation_success"] = validation["success"]
         file_dict["validation_error"] = validation["error"]
+        if validation["success"] is False:
+            project_validated = False
     context["project_code"] = project_code
+    context["project_validated"] = project_validated
     return context
 
 
@@ -110,6 +114,7 @@ def run_tests(context):
 
     project_code_notests = []
     project_code_tests = []
+    project_tested = True
     # get python_files which also have test in the name
     for file_dict in project_code:
         file_path = file_dict["absolute_path"]
@@ -121,10 +126,12 @@ def run_tests(context):
     for file_dict in project_code_tests:
         file_path = file_dict["absolute_path"]
         test = test_code(file_path)
+        if test["success"] is False:
+            project_tested = False
         file_dict["test_success"] = test["success"]
         file_dict["test_error"] = test["error"]
         file_dict["test_output"] = test["output"]
-
+    context["project_tested"] = project_tested
     context["project_code"] = project_code_notests + project_code_tests
     return context
 
@@ -149,6 +156,5 @@ def run_main(context):
 def backup_project(context):
     project_dir = context["project_dir"]
     project_name = context["project_name"]
-    epoch = context["epoch"]
     context["backup"] = zip_python_files(project_dir, project_name, epoch)
     return context
