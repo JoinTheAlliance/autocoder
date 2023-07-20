@@ -13,21 +13,17 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 load_dotenv()  # take environment variables from .env.
 
-
-def print_logo():
+def main(project_data):
     """
-    Prints ASCII logo using pyfiglet.
+    Main entrypoint for autocode. Usually called from the CLI.
     """
 
+    # Print logo
     f = Figlet(font="letters")
     console = Console()
     print("\n")
     console.print(f.renderText("autocode"), style="yellow")
     console.print("Starting...\n", style="BRIGHT_BLACK")
-
-
-def main(project_data):
-    print_logo()
 
     def initialize(context):
         if context is None:

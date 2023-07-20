@@ -1,7 +1,3 @@
-# TODO 3. sort code so that the error document is at the bottom of the context
-# TODO: handle available actions -- show the actions in prompt nicely
-
-
 import os
 from easycompletion import compose_function, compose_prompt, openai_function_call
 
@@ -385,15 +381,8 @@ def step(context):
         prompt = create_prompt
         functions = [create_function]
 
-    text=compose_prompt(prompt, context)
-    print("Acting on context:")
-    print(text)
-    print("Functions")
-    print(functions)
-
-    response = openai_function_call(
-        text=text, functions=functions
-    )
+    text = compose_prompt(prompt, context)
+    response = openai_function_call(text=text, functions=functions)
 
     # find the function in functions with the name that matches response["function_name"]
     # then call the handler with the arguments and context

@@ -72,9 +72,7 @@ def step(context, loop_dict):
     if context["file_count"] == 0:
         print("No files found, must be a new project")
         return context
-    print("context")
-    print(context)
-    
+
     context = backup_project(context)
     context = collect_files(context)
     context = validate_files(context)

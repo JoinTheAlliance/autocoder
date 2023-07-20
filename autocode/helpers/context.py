@@ -7,8 +7,7 @@ from autocode.helpers.files import (
     get_python_files,
     zip_python_files,
 )
-from autocode.helpers.code import run_code, test_code
-from autocode.helpers.validation import validate_file
+from autocode.helpers.code import run_code, test_code, validate_file
 
 
 def get_file_count(context):
@@ -35,7 +34,9 @@ def read_and_format_code(context):
 
         # adding file content to the string with line numbers
         project_files_str += "\n================================================================================n"
-        project_files_str += "Path (Relative): {}\Path (Absolute): {}\n".format(str(rel_path), absolute_path)
+        project_files_str += "Path (Relative): {}\Path (Absolute): {}\n".format(
+            str(rel_path), absolute_path
+        )
         if "main.py" in str(rel_path):
             project_files_str += "(Project Entrypoint)\n"
             project_files_str += "Run Success: {}\n".format(main_success)
@@ -146,7 +147,7 @@ def run_main(context):
 
     if main_file is None:
         return context
-    
+
     result = run_code(main_file["absolute_path"])
 
     context["main_success"] = result["success"]
