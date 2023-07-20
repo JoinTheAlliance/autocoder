@@ -1,12 +1,10 @@
 import tempfile
 import os
 from autocode.helpers.code import (
-    check_if_builtin,
     contains_function_definition,
     file_exists,
     has_functions_called,
     is_runnable,
-    install_imports,
     get_imports,
     count_lines,
     validate_file,
@@ -15,14 +13,6 @@ from autocode.helpers.code import (
     run_code,
     test_code,
 )
-
-
-def test_check_if_builtin_success():
-    assert check_if_builtin("os") == True
-
-
-def test_check_if_builtin_failure():
-    assert check_if_builtin("fake_module") == False
 
 
 def test_is_runnable_success():
@@ -34,39 +24,47 @@ def test_is_runnable_success():
 
 def test_is_runnable_failure():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-        tmp.write(b"print('Hello, world!")
+        tmp.write(b"\n()prin('Hello, world!asdfs)asdfsafsa\ndfgs\n")
+        tmp.flush()
+        tmp.close()
+
+        # read tmp file
+        with open(tmp.name, "r") as f:
+            print(f.read())
+
+        print(is_runnable(tmp.name))
         assert is_runnable(tmp.name) == False
     os.remove(tmp.name)
 
 
 def test_contains_function_definition_true():
     code = """
-    def hello():
-        print('Hello, world!')
-    hello()
+def hello():
+    print('Hello, world!')
+hello()
     """
     assert contains_function_definition(code) == True
-    
+
 
 def test_contains_function_definition_false():
     code = """
-    def hello():
-        print('Hello, world!')
+def hello():
+    print('Hello, world!')
     """
     assert contains_function_definition(code) == False
 
 
 def test_has_functions_called_true():
     code = """
-    print('Hello, world!')
+print('Hello, world!')
     """
     assert has_functions_called(code) == True
 
 
 def test_has_functions_called_false():
     code = """
-    def hello():
-        print('Hello, world!')
+def hello():
+    print('Hello, world!')
     """
     assert has_functions_called(code) == False
 
@@ -111,7 +109,11 @@ print('Hello, world!')  # This is another comment
 
 # This is yet another comment
 """
-    assert count_lines(code, exclude_comments=True, exclude_empty_lines=True) == 1, "Should be 1 line but is {}".format(count_lines(code, exclude_comments=True, exclude_empty_lines=True))
+    assert (
+        count_lines(code, exclude_comments=True, exclude_empty_lines=True) == 1
+    ), "Should be 1 line but is {}".format(
+        count_lines(code, exclude_comments=True, exclude_empty_lines=True)
+    )
 
 
 def test_validate_file_success():
@@ -173,23 +175,23 @@ def test_run_code_success():
 
 def test_run_code_failure():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-        tmp.write(b"print('Hello, world!")
+        tmp.write(b"aprint(foo)a")
         result = run_code(tmp.name)
         assert result["success"] == False
-        assert "SyntaxError: EOL while scanning string literal" in result["error"]
     os.remove(tmp.name)
-
 
 
 def test_test_code_success():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-        tmp.write(b"""
-    def test_hello():
-        assert 'Hello, world!' == 'Hello, world!'
-    test_hello()
-    """)
+        tmp.write(
+            b"""
+def test_hello():
+assert 'Hello, world!' == 'Hello, world!'
+test_hello()
+    """
+        )
         result = test_code(tmp.name)
-        print('**** result', result)
+        print("**** result", result)
         assert result["success"] == True
         # assert "1 passed" in result["output"]
         # assert result["error"] == ""

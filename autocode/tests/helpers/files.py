@@ -29,7 +29,7 @@ def test_count_files():
 
 
 def test_get_full_path():
-    #TODO: does't work, needs to be tested with a real project?
+    # TODO: does't work, needs to be tested with a real project?
     project_dir = "/home/user/project"
     filepath = "subdir/file.txt"
     expected_full_path = "/home/user/project/subdir/file.txt"

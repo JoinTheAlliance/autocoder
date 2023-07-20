@@ -96,10 +96,12 @@ def test_run_tests():
 
     context = {"project_dir": TEST_DIR}
     context = collect_files(context)
-    result = run_tests(context)
+    context = run_tests(context)
+    print('**** RESULT')
+    print(context)
 
-    assert "project_tested" in result
-    assert result["project_tested"] is True  # We have a simple test that always passes
+    assert "project_tested" in context
+    assert context["project_tested"] is True  # We have a simple test that always passes
 
     teardown_function()
 

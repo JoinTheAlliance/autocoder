@@ -1,21 +1,7 @@
 import subprocess
 import ast
-import importlib.util
 import ast
 import pkg_resources
-
-def check_if_builtin(module_name):
-    # Try to find a built-in module with the provided name
-    spec = importlib.util.find_spec(module_name)
-    if spec is None:
-        return False
-
-    # If the spec exists and the module is built-in
-    if spec and spec.origin == "built-in":
-        return True
-
-    # If the module isn't found or isn't built-in
-    return False
 
 
 def install_imports(code):
@@ -46,10 +32,33 @@ def get_imports(code):
 
 def is_runnable(filename):
     try:
-        subprocess.check_call(["python", "-m", "py_compile", filename], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        return True
-    except subprocess.CalledProcessError:
+        result = subprocess.run(["python", "-m", "py_compile", filename],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        # read the code from filename
+        with open(filename, "r") as f:
+            code = f.read()
+            print('*** CODE')
+            print(code)
+
+        # Always print stdout and stderr
+        if result.stdout:
+            print(f"Output: {result.stdout}")
+        if result.stderr and result.stderr != "":
+            print(f"Errors: {result.stderr}")
+            return False
+        else:
+            print('NO ERRORS!!!')
+
+        if result.returncode != 0:
+            print(f"An error occurred while compiling {filename}")
+            return False
+    except Exception as e:
+        print(f"An error occurred: {e}")
         return False
+
+    return True
 
 def contains_function_definition(code):
     """Checks if a string of Python code contains any function definitions."""
