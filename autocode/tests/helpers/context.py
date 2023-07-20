@@ -18,8 +18,9 @@ PROJECT_NAME = "test_project"
 
 
 def setup_function():
-    # Create a temporary directory for testing
-    os.makedirs(TEST_DIR)
+    # Create a temporary directory for testing if TEST_DIR doesn't exist
+    if not Path(TEST_DIR).exists():
+        os.mkdir(TEST_DIR)
 
     # Add some python files
     with open(os.path.join(TEST_DIR, "main.py"), "w") as f:

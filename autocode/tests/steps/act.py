@@ -62,19 +62,29 @@ def test_insert_code_handler():
     context = {"project_dir": "test_dir"}
     arguments = {
         "reasoning": "Testing insert code handler",
-        "code": "\nprint('Inserted line')",
-        "line_number": 0,
+        "code": "print('Inserted line')",
+        "line_number": 1,
         "filepath": "main.py",
-        "packages": ["numpy", "pandas"],
+        "packages": [],
+    }
+
+    write_arguments = {
+        "reasoning": "Testing write complete script handler",
+        "code": "print('Hello, World!')\nprint('An intereserted line should come before this!')",
+        "filepath": "main.py",
+        "packages": [],
     }
     write_complete_script_handler(
-        arguments, context
+        write_arguments, context
     )  # First, create a file to insert into
+
+
     insert_code_handler(arguments, context)
 
     with open("test_dir/main.py", "r") as f:
         lines = f.readlines()
-    assert "Inserted line" in lines[0]
+    print(lines)
+    assert "Inserted line" in lines[1]
     teardown_function()
 
 
@@ -107,8 +117,14 @@ def test_remove_code_handler():
         "end_line": 1,
         "filepath": "main.py",
     }
+    write_arguments = {
+        "reasoning": "Testing write complete script handler",
+        "code": "print('Hello, World!')",
+        "filepath": "main.py",
+        "packages": ["numpy", "pandas"],
+    }
     write_complete_script_handler(
-        arguments, context
+        write_arguments, context
     )  # First, create a file to remove from
     remove_code_handler(arguments, context)
 

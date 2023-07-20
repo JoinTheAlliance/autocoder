@@ -1,11 +1,14 @@
 import subprocess
 import ast
 import importlib.util
-
+import ast
+import pkg_resources
 
 def check_if_builtin(module_name):
     # Try to find a built-in module with the provided name
     spec = importlib.util.find_spec(module_name)
+    if spec is None:
+        return False
 
     # If the spec exists and the module is built-in
     if spec and spec.origin == "built-in":
@@ -24,42 +27,29 @@ def install_imports(code):
 
 
 def get_imports(code):
-    # Split the code into lines
-    lines = [line.strip() for line in code.split("\n")]
+    # List installed packages
+    installed_packages = [d.key for d in pkg_resources.working_set]
 
-    # Find import lines
-    imports = [
-        line.split(" as")[0].replace("import", "").strip()
-        for line in lines
-        if line.startswith("import")
-    ]
+    tree = ast.parse(code)
 
-    # Find 'from' import lines
-    from_imports = [
-        line.split("import")[0].replace("from", "").strip()
-        for line in lines
-        if line.startswith("from")
-    ]
-
-    # Combine, deduplicate, and remove submodules
-    all_imports = list(set(imports + from_imports))
-    all_imports = [imp.split(".")[0] if "." in imp else imp for imp in all_imports]
-
-    # Exclude system packages, and sort
-    user_imports = sorted(
-        [imp for imp in all_imports if check_if_builtin(imp) is False]
-    )
-
-    return user_imports
+    import_statements = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            import_statements.extend([alias.name for alias in node.names])
+        elif isinstance(node, ast.ImportFrom):
+            if node.level == 0:  # Absolute import
+                import_statements.append(node.module)
+    # Check which import statements are in installed packages
+    import_packages = [imp for imp in import_statements if imp in installed_packages]
+    return import_packages
 
 
 def is_runnable(filename):
     try:
-        subprocess.check_call(["python3", "-m", "py_compile", filename])
+        subprocess.check_call(["python", "-m", "py_compile", filename], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         return True
     except subprocess.CalledProcessError:
         return False
-
 
 def contains_function_definition(code):
     """Checks if a string of Python code contains any function definitions."""
@@ -79,6 +69,7 @@ def contains_function_definition(code):
 
     try:
         tree = ast.parse(code)
+        print(tree)
         return visit(tree)
     except SyntaxError:
         return False
@@ -193,7 +184,7 @@ def save_code(code, filename):
 
 def run_code(filename):
     process = subprocess.Popen(
-        ["python3", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        ["python", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     output, error = process.communicate()
     output = output.decode("utf-8")
@@ -204,11 +195,13 @@ def run_code(filename):
     return {"success": success, "error": error, "output": output}
 
 
-def test_code(filepath):
+def test_code(script_path):
     """Run pytest on a given Python file."""
-
+    cmd = "pytest" 
+    print('*** cmd')
+    print (cmd)
     # Create the command
-    command = ["pytest", filepath]
+    command = [cmd, script_path]
 
     # Run the command and get the output
     result = subprocess.run(command, capture_output=True, text=True)

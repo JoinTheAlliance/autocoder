@@ -1,1 +1,1 @@
-from . import *
+from autocode.tests import *

@@ -97,8 +97,6 @@ def create_handler(arguments, context):
 
 def write_complete_script_handler(arguments, context):
     reasoning = arguments["reasoning"]
-    print("Reasoning:\n")
-    print(reasoning)
     code = arguments["code"]
     filepath = arguments["filepath"]
     packages = arguments.get("packages", [])
