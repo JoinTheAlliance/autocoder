@@ -78,7 +78,6 @@ def contains_function_definition(code):
 
     try:
         tree = ast.parse(code)
-        print(tree)
         return visit(tree)
     except SyntaxError:
         return False
@@ -204,17 +203,16 @@ def run_code(filename):
     return {"success": success, "error": error, "output": output}
 
 
-def test_code(script_path):
+def run_code_tests(script_path):
+    print("*** script_path", script_path)
     """Run pytest on a given Python file."""
-    cmd = "pytest" 
-    print('*** cmd')
-    print (cmd)
-    # Create the command
-    command = [cmd, script_path]
 
     # Run the command and get the output
-    result = subprocess.run(command, capture_output=True, text=True)
-
+    result = subprocess.run(["python", "-m", "pytest", script_path], capture_output=True, text=True)
+    if result.stderr == "" or result.stderr is None:
+        result.stderr = False
+    print ('*** TEST CODE')
+    print (result)
     # Return the exit code. The exit code is 0 if the tests pass.
     return {
         "success": result.returncode == 0,

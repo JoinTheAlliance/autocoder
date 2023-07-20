@@ -11,14 +11,14 @@ from autocode.helpers.code import (
     validate_code,
     save_code,
     run_code,
-    test_code,
+    run_code_tests,
 )
 
 
 def test_is_runnable_success():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
         tmp.write(b"print('Hello, world!')")
-        assert is_runnable(tmp.name) == True
+    assert is_runnable(tmp.name) == True
     os.remove(tmp.name)
 
 
@@ -28,12 +28,12 @@ def test_is_runnable_failure():
         tmp.flush()
         tmp.close()
 
-        # read tmp file
-        with open(tmp.name, "r") as f:
-            print(f.read())
+    # read tmp file
+    with open(tmp.name, "r") as f:
+        print(f.read())
 
-        print(is_runnable(tmp.name))
-        assert is_runnable(tmp.name) == False
+    print(is_runnable(tmp.name))
+    assert is_runnable(tmp.name) == False
     os.remove(tmp.name)
 
 
@@ -44,14 +44,6 @@ def hello():
 hello()
     """
     assert contains_function_definition(code) == True
-
-
-def test_contains_function_definition_false():
-    code = """
-def hello():
-    print('Hello, world!')
-    """
-    assert contains_function_definition(code) == False
 
 
 def test_has_functions_called_true():
@@ -72,7 +64,7 @@ def hello():
 def test_file_exists_true():
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         tmp.write(b"print('Hello, world!')")
-        assert file_exists(tmp.name) == True
+    assert file_exists(tmp.name) == True
     os.remove(tmp.name)
 
 
@@ -116,23 +108,6 @@ print('Hello, world!')  # This is another comment
     )
 
 
-def test_validate_file_success():
-    with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-        tmp.write(b"def hello():\n\tprint('Hello, world!')\nhello()")
-        assert validate_file(tmp.name) == {"success": True, "error": None}
-    os.remove(tmp.name)
-
-
-def test_validate_file_failure():
-    with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-        tmp.write(b"print('Hello, world!")
-        assert validate_file(tmp.name) == {
-            "success": False,
-            "error": "The file is not runnable, or didn't compile.",
-        }
-    os.remove(tmp.name)
-
-
 def test_validate_code_success():
     code = """
     import os
@@ -158,26 +133,56 @@ def test_save_code():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
         code = "print('Hello, world!')"
         save_code(code, tmp.name)
-        with open(tmp.name, "r") as f:
-            assert f.read() == code
+    with open(tmp.name, "r") as f:
+        assert f.read() == code
     os.remove(tmp.name)
 
 
 def test_run_code_success():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
         tmp.write(b"print('Hello, world!')")
-        result = run_code(tmp.name)
-        assert result["success"] == True
-        assert result["error"] == None
-        assert result["output"].strip() == "Hello, world!"
+    result = run_code(tmp.name)
+    assert result["success"] == True
+    assert result["error"] == None
+    assert result["output"].strip() == "Hello, world!"
     os.remove(tmp.name)
 
 
 def test_run_code_failure():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
         tmp.write(b"aprint(foo)a")
-        result = run_code(tmp.name)
-        assert result["success"] == False
+    result = run_code(tmp.name)
+    assert result["success"] == False
+    os.remove(tmp.name)
+
+
+def test_contains_function_definition_false():
+    code = """
+def hello():
+    print('Hello, world!')
+    """
+    assert contains_function_definition(code) == True
+
+
+def test_validate_file_success():
+    with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
+        tmp.write(b"import os\ndef hello():\n\tprint('Hello, world!')\nhello()\n\ndef goodbye():\n\tprint('Goodbye, world!')\ngoodbye()")
+    output = validate_file(tmp.name)
+    print('*** output')
+    print(output)
+    assert validate_file(tmp.name) == {"success": True, "error": None}
+    os.remove(tmp.name)
+
+
+def test_validate_file_failure():
+    with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
+        tmp.write(b"print('Hello, world!")
+    print("validate_file(tmp.name)")
+    print(validate_file(tmp.name))
+    assert validate_file(tmp.name) == {
+        "success": False,
+        "error": "The file is not runnable, or didn't compile.",
+    }
     os.remove(tmp.name)
 
 
@@ -186,13 +191,13 @@ def test_test_code_success():
         tmp.write(
             b"""
 def test_hello():
-assert 'Hello, world!' == 'Hello, world!'
+    assert 'Hello, world!' == 'Hello, world!'
 test_hello()
     """
         )
-        result = test_code(tmp.name)
-        print("**** result", result)
-        assert result["success"] == True
-        # assert "1 passed" in result["output"]
-        # assert result["error"] == ""
+    result = run_code_tests(tmp.name)
+    print("**** result", result)
+    assert result["success"] == True
+    # assert "1 passed" in result["output"]
+    # assert result["error"] == ""
     os.remove(tmp.name)

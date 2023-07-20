@@ -7,7 +7,7 @@ from autocode.helpers.files import (
     get_python_files,
     zip_python_files,
 )
-from autocode.helpers.code import run_code, test_code, validate_file
+from autocode.helpers.code import run_code, run_code_tests, validate_file
 
 
 def get_file_count(context):
@@ -126,7 +126,7 @@ def run_tests(context):
 
     for file_dict in project_code_tests:
         file_path = file_dict["absolute_path"]
-        test = test_code(file_path)
+        test = run_code_tests(file_path)
         if test["success"] is False:
             project_tested = False
         file_dict["test_success"] = test["success"]
