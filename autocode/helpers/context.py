@@ -21,12 +21,12 @@ def read_and_format_code(context):
     # Read the contents of all python files and create a list of dicts
     project_files_str = "Project Files:\n"
 
-    main_success = context["main_success"]
-    main_error = context["main_error"]
+    main_success = context.get("main_success", None)
+    main_error = context.get("main_error", None)
 
     for project_dict in context["project_code"]:
-        rel_path = project_dict["rel_path"]
-        file_path = project_dict["file_path"]
+        rel_path = project_dict["relative_path"]
+        absolute_path = project_dict["absolute_path"]
         content = project_dict["content"]
         validation_success = project_dict["validation_success"]
         validation_error = project_dict["validation_error"]
@@ -35,7 +35,7 @@ def read_and_format_code(context):
 
         # adding file content to the string with line numbers
         project_files_str += "\n================================================================================n"
-        project_files_str += "File: {}\nPath: {}\n".format(str(rel_path), file_path)
+        project_files_str += "Path (Relative): {}\Path (Absolute): {}\n".format(str(rel_path), absolute_path)
         if "main.py" in str(rel_path):
             project_files_str += "(Project Entrypoint)\n"
             project_files_str += "Run Success: {}\n".format(main_success)
@@ -144,6 +144,9 @@ def run_main(context):
         if "main.py" in file_dict["relative_path"]:
             main_file = file_dict
 
+    if main_file is None:
+        return context
+    
     result = run_code(main_file["absolute_path"])
 
     context["main_success"] = result["success"]
@@ -155,6 +158,6 @@ def run_main(context):
 
 def backup_project(context):
     project_dir = context["project_dir"]
-    project_name = context["project_name"]
-    context["backup"] = zip_python_files(project_dir, project_name, epoch)
+    project_name = context["name"]
+    context["backup"] = zip_python_files(project_dir, project_name)
     return context

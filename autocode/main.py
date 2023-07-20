@@ -31,11 +31,9 @@ def main(project_data):
 
     def initialize(context):
         if context is None:
+            print("Initializing...")
             # Should only run on the first run
-            context = {
-                "project_data": project_data,
-                "mode": "assess",
-            }
+            context = project_data
         return context
 
     loop_dict = start([initialize, reason, act])

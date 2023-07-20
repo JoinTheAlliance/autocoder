@@ -130,4 +130,4 @@ def validate_code(code):
             "error": "The file has a '...' in it. This indicates that it is not a complete file. Please respond with the complete script and do not omit any functions, code, tests or sections. Your response should include all code, including imports, and tests, not just changes to code.",
         }
 
-    return {"success": True}
+    return {"success": True, "error": None}

@@ -15,7 +15,7 @@ from autocode.helpers.context import (
 )
 
 reasoning_prompt = """
-{{all_code}}
+{{project_code_formatted}}
 
 Client's stated goals:
 {{goal}}
@@ -66,13 +66,15 @@ def step(context, loop_dict):
     Returns:
         dict: The updated context dictionary after the 'Decide' stage, including the selected action and reasoning behind the action.
     """
-    project_data = context["project_data"]
-    context["file_count"] = get_file_count(context)
+    context = get_file_count(context)
 
-    # New path
+    # If we have no files, go immediately to the create step
     if context["file_count"] == 0:
+        print("No files found, must be a new project")
         return context
-
+    print("context")
+    print(context)
+    
     context = backup_project(context)
     context = collect_files(context)
     context = validate_files(context)
@@ -80,16 +82,8 @@ def step(context, loop_dict):
     context = run_main(context)
     context = read_and_format_code(context)
 
-    # for every key in project data, add it to the context
-    for key in project_data:
-        context[key] = project_data[key]
-
-    # If we have no files, go immediately to the create step
-    if context["file_count"] == 0:
-        return context
-
     # If we have an error, go immediately to the edit step
-    if context["main_success"] is False:
+    if context.get("main_success", None) is False:
         return context
 
     # If any of the files failed to validate for any reason, go immediately to the edit step
@@ -110,5 +104,4 @@ def step(context, loop_dict):
         loop_dict.stop()
 
     context["reasoning"] = response["arguments"]["reasoning"]
-    context["action_name"] = "edit"
     return context

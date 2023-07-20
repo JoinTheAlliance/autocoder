@@ -40,9 +40,9 @@ def terminal():
         )
         if project_path.lower().startswith("c"):
             project_name = input("What is the name of your project? ")
-            project_path = f"projects/{project_name}.json"
+            project_path = f"project_data/{project_name}.json"
             goal = input("What is the goal of your project? ")
-            project_dir = f"projects/{project_name}"
+            project_dir = f"project_data/{project_name}"
             if not os.path.exists(project_dir):
                 os.makedirs(project_dir)
             project_data = {
@@ -58,7 +58,7 @@ def terminal():
 
             # if project_path doesn't contain any "/" or ".json", its a project name
             if "/" not in project_path and ".json" not in project_path:
-                project_path = f"projects/{project_path}.json"
+                project_path = f"project_data/{project_path}.json"
 
             if os.path.exists(project_path) == False:
                 print("That project does not exist.")
@@ -71,7 +71,7 @@ def terminal():
             sys.exit(1)
     else:
         if "/" not in project_path and ".json" not in project_path:
-            project_path = f"projects/{project_path}.json"
+            project_path = f"project_data/{project_path}.json"
             project_data = json.load(open(project_path))
     return [project_data]
 

@@ -41,7 +41,7 @@ You should include the following details
 
 edit_prompt = """
 {{goal}}
-{{all_code}}
+{{project_code_formatted}}
 {{reasoning}}
 {{error}}
 {{available_actions}}
@@ -198,7 +198,7 @@ def create_new_file_handler(arguments, context):
     return context
 
 
-def get_functions():
+def get_actions():
     return [
         {
             "function": compose_function(
@@ -376,14 +376,23 @@ def step(context):
     """
 
     prompt = edit_prompt
-    functions = get_functions()
+    actions = get_actions()
+    # each entry in functions is a dict
+    # # get the "fuction" value from each entry in the function list
+    functions = [f["function"] for f in actions]
 
     if context["file_count"] == 0:
         prompt = create_prompt
         functions = [create_function]
 
+    text=compose_prompt(prompt, context)
+    print("Acting on context:")
+    print(text)
+    print("Functions")
+    print(functions)
+
     response = openai_function_call(
-        text=compose_prompt(prompt, context), functions=functions
+        text=text, functions=functions
     )
 
     # find the function in functions with the name that matches response["function_name"]
@@ -396,11 +405,11 @@ def step(context):
         return context
 
     arguments = response["arguments"]
-    function = None
-    for f in functions:
+    action = None
+    for f in actions:
         if f["function"]["name"] == function_name:
-            function = f
+            action = f
             break
 
-    context = function["handler"](arguments, context)
+    context = action["handler"](arguments, context)
     return context

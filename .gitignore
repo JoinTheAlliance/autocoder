@@ -10,3 +10,4 @@ project_data/
 .DS_Store
 memory/
 projects/
+.project_cache/

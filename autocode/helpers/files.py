@@ -1,11 +1,61 @@
 import os
+import time
 import zipfile
 from pathlib import Path
 import fnmatch
 
 
 def count_files(dir):
-    len([name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))])
+    # check if the dir exists
+    if not os.path.exists(dir):
+        print("Directory does not exist.")
+        return 0
+    count = len(
+        [name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))]
+    )
+    return count
+
+
+def get_full_path(filepath, project_dir):
+    """
+    Takes a filepath and a project directory, and constructs a full path based on the inputs.
+    Returns the absolute path to the file.
+
+    :param filepath: The input filepath, which can include directories and a filename.
+    :type filepath: str
+    :param project_dir: The directory where the project files are located.
+    :type project_dir: str
+    :return: The absolute path to the file, given the filename.
+    :rtype: str
+    """
+    filename = os.path.basename(filepath)
+    directory_path = os.path.dirname(filepath)
+
+    if directory_path:  # there are directories in filepath
+        full_path = os.path.join(project_dir, directory_path)
+        if not os.path.exists(full_path):  # directories don't exist yet
+            # check for overlapping directory names
+            proj_dirs = set(project_dir.split(os.path.sep))
+            dir_path_dirs = set(directory_path.split(os.path.sep))
+            overlap = proj_dirs & dir_path_dirs
+            if overlap:
+                # find the index of the overlapping directory in the project directory
+                overlap_dir = overlap.pop()
+                index = project_dir.split(os.path.sep).index(overlap_dir)
+                # consolidate paths
+                full_path = os.path.join(project_dir.split(os.path.sep)[0 : index + 1])
+                full_path = os.path.join(
+                    full_path, directory_path.split(os.path.sep)[index + 1 :]
+                )
+                full_path = os.path.join(full_path, filename)
+            else:
+                # create directories until the path exists
+                os.makedirs(full_path)
+    else:  # there are no directories in filepath, just a filename
+        full_path = os.path.join(project_dir, filename)
+
+    absolute_path = os.path.abspath(full_path)
+    return absolute_path
 
 
 def file_tree_to_dict(startpath):
@@ -44,7 +94,7 @@ def get_python_files(startpath):
     return py_files
 
 
-def zip_python_files(project_dir, project_name, epoch):
+def zip_python_files(project_dir, project_name):
     # Check if ./.project_cache exists, create if not
     cache_dir = Path("./.project_cache")
     cache_dir.mkdir(exist_ok=True)
@@ -53,8 +103,11 @@ def zip_python_files(project_dir, project_name, epoch):
     project_cache_dir = cache_dir / project_name
     project_cache_dir.mkdir(exist_ok=True)
 
+    # create a timestamp
+    epoch = int(time.time())
+
     # Create zip file path
-    zip_file_path = project_cache_dir / f"{project_name}_{str(epoch)}.zip"
+    zip_file_path = f"{project_cache_dir}/{project_name}_{str(epoch)}.zip"
 
     # Create a zip file
     with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as zipf:
