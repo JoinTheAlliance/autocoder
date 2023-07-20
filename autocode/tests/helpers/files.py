@@ -20,8 +20,6 @@ def test_file_tree_to_dict():
         open(os.path.join(tmpdirname, "dir1/dir2/file3.txt"), "w").close()
 
         file_tree = file_tree_to_dict(tmpdirname)
-        print("*** file_tree")
-        print(file_tree)
         expected_tree = {
             "file1.txt": None,
             "dir1": {"file2.txt": None, "dir2": {"file3.txt": None}},

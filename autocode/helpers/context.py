@@ -96,8 +96,6 @@ def validate_files(context):
         file_dict["validation_success"] = validation["success"]
         file_dict["validation_error"] = validation["error"]
         if validation["success"] is False:
-            print('*** SUCCESS IS FALSE')
-            print(validation["error"])
             project_validated = False
     context["project_code"] = project_code
     context["project_validated"] = project_validated

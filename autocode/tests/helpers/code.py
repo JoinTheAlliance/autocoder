@@ -28,11 +28,6 @@ def test_is_runnable_failure():
         tmp.flush()
         tmp.close()
 
-    # read tmp file
-    with open(tmp.name, "r") as f:
-        print(f.read())
-
-    print(is_runnable(tmp.name))
     assert is_runnable(tmp.name) == False
     os.remove(tmp.name)
 
@@ -80,7 +75,6 @@ import pytest
 from os import path
 from subprocess import call
 """
-    print(get_imports(code))
     assert set(get_imports(code)) == set(["agentmemory", "numpy", "pytest"])
 
 
@@ -168,8 +162,6 @@ def test_validate_file_success():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
         tmp.write(b"import os\ndef hello():\n\tprint('Hello, world!')\nhello()\n\ndef goodbye():\n\tprint('Goodbye, world!')\ngoodbye()")
     output = validate_file(tmp.name)
-    print('*** output')
-    print(output)
     assert validate_file(tmp.name) == {"success": True, "error": None}
     os.remove(tmp.name)
 
@@ -177,8 +169,6 @@ def test_validate_file_success():
 def test_validate_file_failure():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
         tmp.write(b"print('Hello, world!")
-    print("validate_file(tmp.name)")
-    print(validate_file(tmp.name))
     assert validate_file(tmp.name) == {
         "success": False,
         "error": "The file is not runnable, or didn't compile.",
@@ -196,7 +186,6 @@ test_hello()
     """
         )
     result = run_code_tests(tmp.name)
-    print("**** result", result)
     assert result["success"] == True
     # assert "1 passed" in result["output"]
     # assert result["error"] == ""

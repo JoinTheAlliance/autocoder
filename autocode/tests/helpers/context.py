@@ -110,8 +110,6 @@ def test_validate_files():
     context = {"project_dir": TEST_DIR}
     context = collect_files(context)
     context = validate_files(context)
-    print('*** RESULT ***')
-    print(context)
 
     assert "project_code" in context, "project_code should be in the context"
     assert "project_validated" in context, "project_validated should be in the context"

@@ -78,9 +78,6 @@ def create_handler(arguments, context):
 
     project_dir = context["project_dir"]
 
-    print("Reasoning:\n")
-    print(reasoning)
-
     # save code to main.py
     with open(f"{project_dir}/main.py", "w") as f:
         f.write(code)
@@ -109,8 +106,6 @@ def write_complete_script_handler(arguments, context):
 
 def insert_code_handler(arguments, context):
     reasoning = arguments["reasoning"]
-    print("Reasoning:\n")
-    print(reasoning)
     code = arguments["code"]
     line_number = arguments["line_number"]
     packages = arguments.get("packages", [])
@@ -127,8 +122,6 @@ def insert_code_handler(arguments, context):
 
 def replace_code_handler(arguments, context):
     reasoning = arguments["reasoning"]
-    print("Reasoning:\n")
-    print(reasoning)
     code = arguments["code"]
     start_line = int(arguments["start_line"])
     end_line = int(arguments["end_line"])
@@ -150,8 +143,6 @@ def replace_code_handler(arguments, context):
 
 def remove_code_handler(arguments, context):
     reasoning = arguments["reasoning"]
-    print("Reasoning:\n")
-    print(reasoning)
     start_line = int(arguments["start_line"])
     end_line = int(arguments["end_line"])
     filepath = arguments["filepath"]
@@ -170,8 +161,6 @@ def remove_code_handler(arguments, context):
 
 def create_new_file_handler(arguments, context):
     reasoning = arguments["reasoning"]
-    print("Reasoning:\n")
-    print(reasoning)
     filepath = arguments["filepath"]
     code = arguments["code"]
     test = arguments["test"]
