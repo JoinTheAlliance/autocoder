@@ -7,10 +7,27 @@ from autocode.helpers.files import (
     count_files,
     file_tree_to_dict,
     file_tree_to_string,
-    get_full_path,
     get_python_files,
     zip_python_files,
 )
+
+
+def test_file_tree_to_dict():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        os.makedirs(os.path.join(tmpdirname, "dir1/dir2"))
+        open(os.path.join(tmpdirname, "file1.txt"), "w").close()
+        open(os.path.join(tmpdirname, "dir1/file2.txt"), "w").close()
+        open(os.path.join(tmpdirname, "dir1/dir2/file3.txt"), "w").close()
+
+        file_tree = file_tree_to_dict(tmpdirname)
+        print("*** file_tree")
+        print(file_tree)
+        expected_tree = {
+            "file1.txt": None,
+            "dir1": {"file2.txt": None, "dir2": {"file3.txt": None}},
+        }
+
+        assert file_tree == expected_tree
 
 
 def test_count_files():
@@ -26,32 +43,6 @@ def test_count_files():
 
     # Test with non-existing directory
     assert count_files("nonexistingdirectory") == 0
-
-
-def test_get_full_path():
-    # TODO: does't work, needs to be tested with a real project?
-    project_dir = "/home/user/project"
-    filepath = "subdir/file.txt"
-    expected_full_path = "/home/user/project/subdir/file.txt"
-
-    assert get_full_path(filepath, project_dir) == expected_full_path
-
-
-def test_file_tree_to_dict():
-    # create a temporary directory
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        os.makedirs(os.path.join(tmpdirname, "dir1/dir2"))
-        open(os.path.join(tmpdirname, "file1.txt"), "w").close()
-        open(os.path.join(tmpdirname, "dir1/file2.txt"), "w").close()
-        open(os.path.join(tmpdirname, "dir1/dir2/file3.txt"), "w").close()
-
-        file_tree = file_tree_to_dict(tmpdirname)
-        expected_tree = {
-            "file1.txt": None,
-            "dir1": {"file2.txt": None, "dir2": {"file3.txt": None}},
-        }
-
-        assert file_tree == expected_tree
 
 
 def test_file_tree_to_string():

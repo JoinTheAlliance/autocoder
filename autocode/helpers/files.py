@@ -31,46 +31,49 @@ def get_full_path(filepath, project_dir):
     filename = os.path.basename(filepath)
     directory_path = os.path.dirname(filepath)
 
-    if directory_path:  # there are directories in filepath
-        full_path = os.path.join(project_dir, directory_path)
-        if not os.path.exists(full_path):  # directories don't exist yet
-            # check for overlapping directory names
-            proj_dirs = set(project_dir.split(os.path.sep))
-            dir_path_dirs = set(directory_path.split(os.path.sep))
-            overlap = proj_dirs & dir_path_dirs
-            if overlap:
-                # find the index of the overlapping directory in the project directory
-                overlap_dir = overlap.pop()
-                index = project_dir.split(os.path.sep).index(overlap_dir)
-                # consolidate paths
-                full_path = os.path.join(project_dir.split(os.path.sep)[0 : index + 1])
-                full_path = os.path.join(
-                    full_path, directory_path.split(os.path.sep)[index + 1 :]
-                )
-                full_path = os.path.join(full_path, filename)
-            else:
-                # create directories until the path exists
-                os.makedirs(full_path)
-    else:  # there are no directories in filepath, just a filename
-        full_path = os.path.join(project_dir, filename)
+    if not directory_path:
+        directory_path = "."
 
-    absolute_path = os.path.abspath(full_path)
-    return absolute_path
+    full_path = os.path.join(project_dir, directory_path)
+    if not os.path.exists(full_path):
+        proj_dirs = set(project_dir.split(os.path.sep))
+        dir_path_dirs = set(directory_path.split(os.path.sep))
+        overlap = proj_dirs & dir_path_dirs
+        if overlap:
+            overlap_dir = overlap.pop()
+            index = project_dir.split(os.path.sep).index(overlap_dir)
+            full_path = os.path.join(project_dir.split(os.path.sep)[0 : index + 1])
+            full_path = os.path.join(
+                full_path, directory_path.split(os.path.sep)[index + 1 :]
+            )
+        else:
+            os.makedirs(full_path)
+    
+    full_path = os.path.join(full_path, filename)
+    full_path = os.path.abspath(full_path)
+    return full_path
 
 
 def file_tree_to_dict(startpath):
     file_tree = {}
     for root, dirs, files in os.walk(startpath):
-        level = root.replace(startpath, "").count(os.sep)
-        if level > 0:
-            branch = dict.fromkeys(files)
-            parent = startpath.split(os.sep)
-            leaf = file_tree
-            for subdir in parent[1:]:
-                leaf = leaf[subdir]
-            leaf[os.path.basename(root)] = branch
+        rel_path = os.path.relpath(root, startpath)
+        parent_dict = file_tree
+
+        # Skip the root directory
+        if rel_path == ".":
+            rel_dirs = []
         else:
-            file_tree[os.path.basename(root)] = dict.fromkeys(files)
+            rel_dirs = rel_path.split(os.sep)
+
+        for d in rel_dirs[:-1]:  # traverse down to the current directory
+            parent_dict = parent_dict.setdefault(d, {})
+
+        if rel_dirs:  # if not at the root directory
+            parent_dict[rel_dirs[-1]] = dict.fromkeys(files, None)
+        else:  # at the root directory
+            parent_dict.update(dict.fromkeys(files, None))
+
     return file_tree
 
 

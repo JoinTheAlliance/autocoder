@@ -1,7 +1,6 @@
 import subprocess
 import ast
-import ast
-import pkg_resources
+from importlib_metadata import distributions
 
 
 def install_imports(code):
@@ -14,7 +13,7 @@ def install_imports(code):
 
 def get_imports(code):
     # List installed packages
-    installed_packages = [d.key for d in pkg_resources.working_set]
+    installed_packages = [d.metadata['name'] for d in distributions()]
 
     tree = ast.parse(code)
 
@@ -211,8 +210,6 @@ def run_code_tests(script_path):
     result = subprocess.run(["python", "-m", "pytest", script_path], capture_output=True, text=True)
     if result.stderr == "" or result.stderr is None:
         result.stderr = False
-    print ('*** TEST CODE')
-    print (result)
     # Return the exit code. The exit code is 0 if the tests pass.
     return {
         "success": result.returncode == 0,
