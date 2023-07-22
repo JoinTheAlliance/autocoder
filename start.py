@@ -1,14 +1,156 @@
-import json
 import os
+import json
 import sys
-from dotenv import load_dotenv
+from prompt_toolkit.shortcuts import button_dialog
+from prompt_toolkit.styles import Style
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
+from prompt_toolkit import PromptSession
+from termcolor import colored
 
+from dotenv import load_dotenv
 load_dotenv()  # take environment variables from .env.
 
-from autocoder.main import main
+from autocoder.main import main as autocoder
+
+style = Style.from_dict(
+    {
+        "dialog": "bg:#88ff88",
+        "button": "bg:#884444 #ffffff",
+        "dialog.body": "bg:#ccffcc",
+        "dialog shadow": "bg:#000088",
+    }
+)
+
+# Define the key bindings
+kb = KeyBindings()
 
 
-def terminal():
+@kb.add(Keys.ControlS)
+def _(event):
+    "By pressing `Control-S`, finish the input."
+    event.app.current_buffer.validate_and_handle()
+
+
+# Create a multiline prompt session
+session = PromptSession(key_bindings=kb, multiline=True)
+
+
+def get_input_from_prompt(question, default_text):
+    print("##########################################################################")
+    print(colored("Press ", "white"), end="")
+    print(colored("'Ctrl-S'", "yellow"), end="")
+    print(colored(" to finish editing and continue to the next question.\n", "white"))
+    print(colored(question, "green"))
+    return session.prompt(default=default_text)
+
+
+def get_project_details(project_data=None, is_editing=False):
+    questions = [
+        {"key": "project_name", "question": "How is the name of your script?"},
+        {
+            "key": "goal",
+            "question": "What do you want your script to do? Please be as detailed as possible.",
+        },
+        {
+            "key": "test",
+            "question": "How can I test the script? Please be as detailed as possible.",
+        },
+    ]
+
+    project_data = project_data or {}
+
+    for item in questions:
+        answer = None
+
+        # If it's not in editing mode and the question is about the project name, ask for input
+        if not is_editing and item["key"] == "project_name":
+            answer = input(f'{item["question"]}: ')
+
+        if is_editing and item["key"] == "project_name":
+            continue
+
+        # If the answer is still None, go through the prompt session
+        if answer is None:
+            default_answer = project_data.get(item["key"], "")
+            # Always use session.prompt() even if default_answer is an empty string
+            answer = get_input_from_prompt(item["question"], default_answer)
+            project_data[item["key"]] = answer if answer else default_answer
+
+        # Don't overwrite the project name if in edit mode
+        if not (is_editing and item["key"] == "project_name"):
+            project_data[item["key"]] = answer if answer else default_answer
+
+    return project_data
+
+
+def save_project_data(name, project_data):
+    ensure_project_data_folder()
+    # check if ./project_data/{name}.json exists, delete it if it does
+    if os.path.exists(f"./project_data/{name}.json"):
+        os.remove(f"./project_data/{name}.json")
+    with open(f"./project_data/{name}.json", "w") as f:
+        json.dump(project_data, f)
+
+
+def run(project_data):
+    autocoder(project_data)
+    sys.exit(0)
+
+
+def ensure_project_data_folder():
+    os.makedirs("./project_data", exist_ok=True)
+
+
+def get_existing_projects():
+    ensure_project_data_folder()
+    return [f[:-5] for f in os.listdir("./project_data") if f.endswith(".json")]
+
+
+def choose_project():
+    return button_dialog(
+        title="Project name",
+        text="Choose a project:",
+        buttons=[(name, name) for name in get_existing_projects()] + [("Back", "Back")],
+        style=style,
+    ).run()
+
+
+def new_or_edit_project(is_editing=False):
+    project_name = ""
+    if is_editing:
+        project_name = choose_project()
+        if project_name == "Back":
+            return
+        with open(f"./project_data/{project_name}.json") as f:
+            project_data = json.load(f)
+        project_data = get_project_details(
+            project_data, is_editing=is_editing
+        )  # Update the project_data dict
+    else:
+        project_data = get_project_details()
+
+    # Use the chosen project_name for 'Edit' case
+    project_name = project_name if is_editing else project_data["project_name"]
+
+    save_project_data(project_name, project_data)
+    print("Project saved.")
+
+    action = button_dialog(
+        title="Run project?",
+        text="Do you want to run this project now?",
+        buttons=[
+            ("Yes", "Yes"),
+            ("No", "No"),
+        ],
+        style=style,
+    ).run()
+
+    if action == "Yes":
+        run(project_data)
+
+
+def main():
     if os.path.exists(".env"):
         # read from it if it does
         with open(".env", "r") as f:
@@ -16,8 +158,8 @@ def terminal():
                 key, value = line.strip().split("=", 1)
                 os.environ[key] = value
                 break
+            
     project_path = None
-    project_data = None
 
     if "--project" in sys.argv:
         project_path = sys.argv[sys.argv.index("--project") + 1]
@@ -33,48 +175,76 @@ def terminal():
                 f.write(f"OPENAI_API_KEY={api_key}")
             os.environ["OPENAI_API_KEY"] = api_key
 
-    # Ask the user if they want to create a project or use an existing one
-    if project_path is None:
-        project_path = input(
-            "Do you want to create a new project or use an existing one? [ (c)reate | (e)xisting ]"
-        )
-        if project_path.lower().startswith("c"):
-            project_name = input("What is the name of your project? ")
-            project_path = f"project_data/{project_name}.json"
-            goal = input("What is the goal of your project? ")
-            project_dir = f"project_data/{project_name}"
-            if not os.path.exists(project_dir):
-                os.makedirs(project_dir)
-            project_data = {
-                "name": project_name,
-                "goal": goal,
-                "project_dir": project_dir,
-                "project_path": project_path,
-            }
-            with open(project_path, "w") as f:
-                json.dump(project_data, f)
-        elif project_path.lower().startswith("e"):
-            project_path = input("What is the name or path of your project file? ")
+    if project_path is not None:
+        with open(f"./project_data/{project_path}.json") as f:
+            run(json.load(f))
 
-            # if project_path doesn't contain any "/" or ".json", its a project name
-            if "/" not in project_path and ".json" not in project_path:
-                project_path = f"project_data/{project_path}.json"
+    while True:
+        existing_projects = get_existing_projects()
+        has_projects = bool(existing_projects)
 
-            if os.path.exists(project_path) == False:
-                print("That project does not exist.")
-                project_path = None
-                sys.exit(1)
-            project_data = json.load(open(project_path))
-        else:
-            print("Invalid option.")
-            project_path = None
-            sys.exit(1)
-    else:
-        if "/" not in project_path and ".json" not in project_path:
-            project_path = f"project_data/{project_path}.json"
-            project_data = json.load(open(project_path))
-    return [project_data]
+        buttons = [
+            ("New", "New"),
+        ]
+
+        if has_projects:
+            buttons += [
+                ("Edit", "Edit"),
+                ("Run", "Run"),
+                ("Delete", "Delete"),
+            ]
+        buttons += [("Quit", "Quit")]
+
+        action = button_dialog(
+            title="autocoder",
+            text="Choose an action:",
+            buttons=buttons,
+            style=style,
+        ).run()
+
+        if action == "Quit":
+            break
+        elif action == "New":
+            new_or_edit_project(is_editing=False)
+        elif action == "Edit" and has_projects:
+            new_or_edit_project(is_editing=True)
+        elif action == "Run" and has_projects:
+            project_name = choose_project()
+            if project_name == "Back":
+                continue
+            with open(f"./project_data/{project_name}.json") as f:
+                run(json.load(f))
+        elif action == "Delete" and has_projects:
+            delete_project()
+
+        if not get_existing_projects():
+            continue
 
 
-[project_data] = terminal()
-main(project_data)
+
+def delete_project():
+    project_name = choose_project()
+    if project_name == "Back":
+        return
+
+    action = button_dialog(
+        title="Confirm Deletion",
+        text=f'Are you sure you want to delete the project "{project_name}"?',
+        buttons=[
+            ("Yes", "Yes"),
+            ("No", "No"),
+        ],
+        style=style,
+    ).run()
+
+    if action == "Yes":
+        # Delete the project
+        os.remove(f"./project_data/{project_name}.json")
+        print(f'Project "{project_name}" has been deleted.')
+        # If no projects remain, return to the main menu immediately
+        if not get_existing_projects():
+            return
+
+
+if __name__ == "__main__":
+    main()
