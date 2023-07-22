@@ -165,15 +165,15 @@ def replace_code_handler(arguments, context):
 
     # Replace the code between start_lines and end_lines with new code
     with open(write_path, "r") as f:
-        lines = f.readlines()
-        lines[start_line - 1 : end_line] = [code]  # python's list indices start at 0
-
-    lines = "\n".join(lines)
+        text = f.read()
+    lines = text.split("\n")
+    lines[start_line - 1 : end_line] = [code]  # python's list indices start at 0
+    text = "\n".join(lines)
 
     log(f"New code:\n{lines}", title="action", type="replace", log=should_log)
 
     with open(write_path, "w") as f:
-        f.write(lines)
+        f.write(text)
 
     context["packages"] = packages
     return context
@@ -197,8 +197,9 @@ def remove_code_handler(arguments, context):
 
     # Remove the code between start_lines and end_lines
     with open(write_path, "r") as f:
-        lines = f.readlines()
-        del lines[start_line - 1 : end_line]  # python's list indices start at 0
+        text = f.read()
+    lines = text.split("\n")
+    del lines[start_line - 1 : end_line]  # python's list indices start at 0
 
     lines = "\n".join(lines)
 

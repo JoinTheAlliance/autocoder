@@ -1,4 +1,6 @@
 import os
+import sys
+
 from dotenv import load_dotenv
 
 from agentloop import start, step_with_input_key
@@ -20,8 +22,6 @@ def main(project_data):
 
     print_header(text="autocoder", color="yellow", font="letters")
     log("Initializing...", title="autocoder", type="system")
-
-    import sys
 
     if "-q" in sys.argv or os.getenv("QUIET") == "True" or os.getenv("QUIET") == "true":
         project_data["quiet"] = True

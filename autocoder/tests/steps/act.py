@@ -55,10 +55,10 @@ def test_write_complete_script_handler():
     assert os.path.isfile("test_dir/main.py")
     # read and print file contents
     with open("test_dir/main.py", "r") as f:
-        lines = f.readlines()
-        text = "\n".join(lines)
-        assert "Hello, World!" in lines[0]
-        print(text)
+        text = f.read()
+    lines = text.split("\n")
+    assert "Hello, World!" in lines[0]
+    print(text)
     teardown_function()
 
 
@@ -87,9 +87,8 @@ def test_insert_code_handler():
     insert_code_handler(arguments, context)
     
     with open("test_dir/main.py", "r") as f:
-        lines = f.readlines()
-    with open("test_dir/main.py", "r") as f:
         text = f.read()
+        lines = text.split("\n")
     print("Insert code:\n====================")
     print(text)
     print("====================")
@@ -102,18 +101,22 @@ def test_replace_code_handler():
     context = {"project_dir": "test_dir"}
     arguments = {
         "reasoning": "Testing replace code handler",
-        "code": "print('New line')",
+        "code": "print('New line')\nprint('Second new line')",
         "start_line": 1,
-        "end_line": 1,
+        "end_line": 2,
         "filepath": "main.py",
         "packages": ["numpy", "pandas"],
     }
-    write_complete_script_handler(arguments, context)  # First, create a file to replace
+
+    # write test_dir/main.py
+    with open("test_dir/main.py", "w") as f:
+        f.write("print('Old line')\nprint('Second old line')\nprint('Third old line')")
+
     replace_code_handler(arguments, context)
 
     with open("test_dir/main.py", "r") as f:
-        lines = f.readlines()
-        text = "\n".join(lines)
+        text = f.read()
+        lines = text.split("\n")
         print("Replace code:")
         print(text)
     assert "New line" in lines[0]
