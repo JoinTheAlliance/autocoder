@@ -34,7 +34,7 @@ def read_and_format_code(context):
 
         # adding file content to the string with line numbers
         project_files_str += "\n================================================================================n"
-        project_files_str += "Path (Relative): {}\Path (Absolute): {}\n".format(
+        project_files_str += "Path (Relative): {}\nPath (Absolute): {}\n".format(
             str(rel_path), absolute_path
         )
         if "main.py" in str(rel_path):

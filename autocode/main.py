@@ -23,11 +23,10 @@ def main(project_data):
     console = Console()
     print("\n")
     console.print(f.renderText("autocode"), style="yellow")
-    console.print("Starting...\n", style="BRIGHT_BLACK")
+    console.print("Initializing...\n", style="BRIGHT_BLACK")
 
     def initialize(context):
         if context is None:
-            print("Initializing...")
             # Should only run on the first run
             context = project_data
         return context
