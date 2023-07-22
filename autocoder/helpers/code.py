@@ -135,11 +135,11 @@ def validate_code(code):
             "error": "The file has more than 50 characters but only one line, probably one massive comment or something.",
         }
 
-    if count_lines(code) < 4:
-        return {
-            "success": False,
-            "error": "The file is not long enough to do much.",
-        }
+    # if count_lines(code) < 4:
+    #     return {
+    #         "success": False,
+    #         "error": "The file is not long enough to do much.",
+    #     }
 
     # if "import" not in code:
     #     return {

@@ -101,22 +101,23 @@ def step(context, loop_dict):
         return context
 
     # If any of the files failed to validate for any reason, go immediately to the edit step
-    if context["project_validated"] is False:
+    if context["project_validated"] is not True:
         validation_errors = ""
         for file_dict in context["project_code"]:
             file_path = file_dict["absolute_path"]
             validation = validate_file(file_path)
             if validation["success"] is False:
                 validation_errors += f"\n{file_path}:\n{validation['error']}\n"
-        log(
-            "Project failed to validate. Errors:\n" + validation_errors,
-            title="validation",
-            type="error",
-            log=should_log,
-        )
+        if validation_errors != "":
+            log(
+                "Project failed to validate. Errors:\n" + validation_errors,
+                title="validation",
+                type="error",
+                log=should_log,
+            )
         return context
 
-    if context["project_tested"] is False:
+    if context["project_tested"] is not True:
         test_errors = ""
         for file_dict in context["project_code"]:
             if (

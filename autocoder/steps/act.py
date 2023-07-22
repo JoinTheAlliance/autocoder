@@ -248,78 +248,78 @@ def create_new_file_handler(arguments, context):
 
 def get_actions():
     return [
-        {
-            "function": compose_function(
-                name="insert_code",
-                description="Insert a snippet of code before a line. This is useful for inserting a function, for example, although if the functio needs to be called, write_complete_module is probably a better choice.",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "What does this code do? Why are you inserting it, and into which file? Please explain as though this is a code review on a pull request.",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The relative path of the file to insert code into, including .py. Must be an existing file from the provided project directory.",
-                    },
-                    "code": {
-                        "type": "string",
-                        "description": "The snippet of code to insert.",
-                    },
-                    "line_number": {
-                        "type": "number",
-                        "description": "The line number to insert the code before.",
-                    },
-                    "packages": {
-                        "type": "array",
-                        "description": "A list of packages to install, derived from the imports of the code.",
-                        "items": {"type": "string"},
-                    },
-                },
-                required_properties=["reasoning", "filepath", "code", "line_number"],
-            ),
-            "handler": insert_code_handler,
-        },
-        {
-            "function": compose_function(
-                name="replace_code",
-                description="Replace lines in the original code with a new snippet of code.",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Which code are you replacing? What does the new code do? Why are you replacing it?",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The relative path of the file to insert code into, including .py.",
-                    },
-                    "code": {
-                        "type": "string",
-                        "description": "The snippet of code to replace the existing code with.",
-                    },
-                    "start_line": {
-                        "type": "number",
-                        "description": "The start line number of the file where code is being replaced.",
-                    },
-                    "end_line": {
-                        "type": "number",
-                        "description": "The end line number of the file where code is being replaced.",
-                    },
-                    "packages": {
-                        "type": "array",
-                        "description": "A list of packages to install, derived from the imports of the code.",
-                        "items": {"type": "string"},
-                    },
-                },
-                required_properties=[
-                    "reasoning",
-                    "filepath",
-                    "code",
-                    "start_line",
-                    "end_line",
-                ],
-            ),
-            "handler": replace_code_handler,
-        },
+        # {
+        #     "function": compose_function(
+        #         name="insert_code",
+        #         description="Insert a snippet of code before a line. This is useful for inserting a function, for example, although if the functio needs to be called, write_complete_module is probably a better choice.",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "What does this code do? Why are you inserting it, and into which file? Please explain as though this is a code review on a pull request.",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The relative path of the file to insert code into, including .py. Must be an existing file from the provided project directory.",
+        #             },
+        #             "code": {
+        #                 "type": "string",
+        #                 "description": "The snippet of code to insert.",
+        #             },
+        #             "line_number": {
+        #                 "type": "number",
+        #                 "description": "The line number to insert the code before.",
+        #             },
+        #             "packages": {
+        #                 "type": "array",
+        #                 "description": "A list of packages to install, derived from the imports of the code.",
+        #                 "items": {"type": "string"},
+        #             },
+        #         },
+        #         required_properties=["reasoning", "filepath", "code", "line_number"],
+        #     ),
+        #     "handler": insert_code_handler,
+        # },
+        # {
+        #     "function": compose_function(
+        #         name="replace_code",
+        #         description="Replace lines in the original code with a new snippet of code.",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "Which code are you replacing? What does the new code do? Why are you replacing it?",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The relative path of the file to insert code into, including .py.",
+        #             },
+        #             "code": {
+        #                 "type": "string",
+        #                 "description": "The snippet of code to replace the existing code with.",
+        #             },
+        #             "start_line": {
+        #                 "type": "number",
+        #                 "description": "The start line number of the file where code is being replaced.",
+        #             },
+        #             "end_line": {
+        #                 "type": "number",
+        #                 "description": "The end line number of the file where code is being replaced.",
+        #             },
+        #             "packages": {
+        #                 "type": "array",
+        #                 "description": "A list of packages to install, derived from the imports of the code.",
+        #                 "items": {"type": "string"},
+        #             },
+        #         },
+        #         required_properties=[
+        #             "reasoning",
+        #             "filepath",
+        #             "code",
+        #             "start_line",
+        #             "end_line",
+        #         ],
+        #     ),
+        #     "handler": replace_code_handler,
+        # },
         {
             "function": compose_function(
                 name="write_complete_module",
