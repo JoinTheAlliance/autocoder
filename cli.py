@@ -34,7 +34,7 @@ session = PromptSession(key_bindings=kb, multiline=True)
 
 def print_logo():
     ascii_logo = pyfiglet.figlet_format(
-        "autocode", font="slant"
+        "autocoder", font="slant"
     )  # 'slant' font for an italic-like effect
     print(colored(ascii_logo, "yellow"))
 
@@ -173,7 +173,7 @@ def main():
         buttons += [("Quit", "Quit")]
 
         action = button_dialog(
-            title="autocode",
+            title="autocoder",
             text="Choose an action:",
             buttons=buttons,
             style=style,

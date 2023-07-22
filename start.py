@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables from .env.
 
-from autocode.main import main
+from autocoder.main import main
 
 
 def terminal():

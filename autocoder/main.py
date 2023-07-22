@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 
 from agentloop import start, step_with_input_key
 
-from autocode.steps import reason
-from autocode.steps import act
+from autocoder.steps import reason
+from autocoder.steps import act
 from agentlogger import log, print_header
 
 # Suppress warning
@@ -15,11 +15,11 @@ load_dotenv()  # take environment variables from .env.
 
 def main(project_data):
     """
-    Main entrypoint for autocode. Usually called from the CLI.
+    Main entrypoint for autocoder. Usually called from the CLI.
     """
 
-    print_header(text="autocode", color="yellow", font="letters")
-    log("Initializing...", title="autocode", type="system")
+    print_header(text="autocoder", color="yellow", font="letters")
+    log("Initializing...", title="autocoder", type="system")
 
     import sys
 

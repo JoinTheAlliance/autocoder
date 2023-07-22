@@ -1,6 +1,6 @@
-<img src="resources/autocode.jpg" width="100%">
+<img src="resources/autocoder.jpg" width="100%">
 
-# autocode
+# autocoder
 Code that basically writes itself.
 
 To run with a prompt

@@ -1,8 +1,8 @@
 import os
 from easycompletion import compose_function, compose_prompt, openai_function_call
-from autocode.helpers.context import handle_packages
+from autocoder.helpers.context import handle_packages
 
-from autocode.helpers.files import get_full_path
+from autocoder.helpers.files import get_full_path
 from agentlogger import log
 
 create_prompt = """
@@ -473,7 +473,7 @@ def step(context):
         f"Response:\n{str(response)}",
         title="action",
         type="response",
-        color="debug",
+        color="yellow",
         log=debug,
     )
 

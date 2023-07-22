@@ -3,7 +3,7 @@ import tempfile
 import shutil
 from pathlib import Path
 import zipfile
-from autocode.helpers.files import (
+from autocoder.helpers.files import (
     count_files,
     file_tree_to_dict,
     file_tree_to_string,

@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-from autocode.helpers.context import (
+from autocoder.helpers.context import (
     get_file_count,
     read_and_format_code,
     collect_files,
@@ -11,7 +11,7 @@ from autocode.helpers.context import (
     run_main,
     backup_project,
 )
-from autocode.helpers.files import get_full_path
+from autocoder.helpers.files import get_full_path
 
 # Assuming you have a directory for testing
 TEST_DIR = "test_dir"

@@ -1,6 +1,6 @@
 import tempfile
 import os
-from autocode.helpers.code import (
+from autocoder.helpers.code import (
     contains_function_definition,
     file_exists,
     has_functions_called,

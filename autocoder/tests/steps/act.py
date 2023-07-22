@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from autocode.steps.act import (
+from autocoder.steps.act import (
     create_handler,
     create_new_file_handler,
     insert_code_handler,

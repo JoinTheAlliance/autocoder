@@ -3,9 +3,9 @@ from easycompletion import (
     compose_prompt,
     compose_function,
 )
-from autocode.helpers.code import validate_file
+from autocoder.helpers.code import validate_file
 
-from autocode.helpers.context import (
+from autocoder.helpers.context import (
     backup_project,
     collect_files,
     get_file_count,
@@ -109,25 +109,30 @@ def step(context, loop_dict):
             if validation["success"] is False:
                 validation_errors += f"\n{file_path}:\n{validation['error']}\n"
         log(
-            "Project failed to validate. Errors:\n"
-            + validation_errors,
+            "Project failed to validate. Errors:\n" + validation_errors,
             title="validation",
             type="error",
             log=should_log,
         )
         return context
-    
+
     if context["project_tested"] is False:
         test_errors = ""
         for file_dict in context["project_code"]:
-            if file_dict.get("test_error") is not None:
-                test_errors += f"\n{file_dict['absolute_path']}:\n{file_dict['test_error']}\n"
-        log(
-            "Project failed to validate. Errors:\n" + test_errors,
-            title="validation",
-            type="error",
-            log=should_log,
-        )
+            if (
+                file_dict.get("test_error") is not None
+                and file_dict.get("test_error") is not False
+            ):
+                test_errors += (
+                    f"\n{file_dict['absolute_path']}:\n{file_dict['test_error']}\n"
+                )
+        if test_errors != "":
+            log(
+                "Project failed in testing. Errors:\n" + test_errors,
+                title="test",
+                type="error",
+                log=should_log,
+            )
         return context
 
     text = compose_prompt(reasoning_prompt, context)
@@ -145,7 +150,7 @@ def step(context, loop_dict):
         f"Response:\n{str(response)}",
         title="reasoning",
         type="response",
-        color="debug",
+        color="yellow",
         log=debug,
     )
 

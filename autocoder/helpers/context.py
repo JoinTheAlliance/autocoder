@@ -1,14 +1,14 @@
 from pathlib import Path
 import subprocess
 
-from autocode.helpers.files import (
+from autocoder.helpers.files import (
     count_files,
     file_tree_to_dict,
     file_tree_to_string,
     get_python_files,
     zip_python_files,
 )
-from autocode.helpers.code import file_exists, run_code, run_code_tests, validate_file
+from autocoder.helpers.code import file_exists, run_code, run_code_tests, validate_file
 from agentlogger import log
 
 def get_file_count(context):

@@ -1,1 +1,1 @@
-from autocode.tests import *
+from autocoder.tests import *
