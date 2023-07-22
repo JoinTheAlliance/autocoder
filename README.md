@@ -1,7 +1,9 @@
-<img src="resources/autocoder.jpg" width="100%">
-
-# autocoder
+# autocoder <a href="https://discord.gg/qetWd7J9De"><img style="float: right" src="https://dcbadge.vercel.app/api/server/qetWd7J9De" alt=""></a>
 Code that basically writes itself.
+
+# IN PROGRESS - v2 coming soon
+
+<img src="resources/image.jpg" width="100%">
 
 To run with a prompt
 ```
@@ -84,3 +86,5 @@ context = {
     reasoning # formatted for prompt template
 }
 ```
+
+<img src="resources/youcreatethefuture.jpg" width="100%">
