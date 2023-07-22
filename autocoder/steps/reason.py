@@ -1,3 +1,4 @@
+import sys
 from easycompletion import (
     openai_function_call,
     compose_prompt,
@@ -17,18 +18,20 @@ from autocoder.helpers.context import (
 
 from agentlogger import log
 
+from agentloop import stop
+
 reasoning_prompt = """
 {{project_code_formatted}}
 
 This is my goal:
 {{goal}}
 
-Note: I have written this code to meet a client's stated goal. The code should also pass the client's stated tests.
+Note: I have written this code to meet a client's stated goal.
 
-Your task: Evaluate the code and determine if it meets the client's stated goals and passes the client's stated tests.
-- If it meets the goals and passes the tests, please provide reasoning for why it does and respond with is_valid_and_complete=True
+Your task: Evaluate the code and determine if it meets the goal, or what could be improved about it.
+- Please provide reasoning for why the code is valid and complete (or not) and respond with is_valid_and_complete=True
 - If it does not meet the goals, please provide explain why it does not, and what could be improved.
-- If there is any reason for improvement, respond with is_valid_and_complete=False.
+- If there is way to improve the code, respond with is_valid_and_complete=False.
 """
 
 
@@ -66,6 +69,9 @@ def step(context, loop_dict):
     Returns:
         dict: The updated context dictionary after the 'Decide' stage, including the selected action and reasoning behind the action.
     """
+    if context["running"] == False:
+        return context
+    
     context = get_file_count(context)
 
     quiet = context.get("quiet")
@@ -165,7 +171,10 @@ def step(context, loop_dict):
             type="success",
             log=should_log,
         )
-        loop_dict.stop()
+        print("loop_dict")
+        print(loop_dict)
+        stop(loop_dict)
+        context["running"] = False
 
     context["reasoning"] = response["arguments"]["reasoning"]
     return context

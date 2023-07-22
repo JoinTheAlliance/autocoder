@@ -13,13 +13,13 @@ Task: Create a Python module that meets the stated goals, along with a set of te
 You should include the following details
 - Plan: Think about the best approach and write out a reasoning. Explain your reasoning.
 - Code: The full code for main.py, including all imports and code.
-    - There should be a main function which is called if __name__ == '__main__'
-    - Use a functional style, with no global variables or classes unless absolutely necessary
+    - There should be a main function which is called if __name__ == '__main__' (which should be located at the bottom of the script)
+    - Use a functional style, with no global variables or classes unless necessary
     - All code should be encapsulated in functions which can be tested
 - Packages: A list of packages to install, derived from the imports of the code. 
-- Test: The full code for main_test.py, including all imports and code. Tests should use a functional style, use the assert keyword run with pytest.
+- Test: The code for main_test.py, including all imports and functions. Tests should use a functional style with the assert keyword and run with pytest.
     - All tests should be in their own functions and have setup and teardown so that they are isolated from each other.
-    - There should be multiple tests for each function in main.py, including tests for edge cases, different argument cases and failure cases.
+    - There should be multiple tests for each function, including tests for edge cases, different argument cases and failure cases.
 """
 
 edit_prompt = """
@@ -422,6 +422,9 @@ def step(context):
     Returns:
         dict: The updated context dictionary after the 'Act' stage, which will be used in the next iteration of the OODA loop.
     """
+
+    if context["running"] == False:
+        return context
 
     prompt = edit_prompt
     actions = get_actions()
