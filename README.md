@@ -10,26 +10,77 @@ python start.py
 
 To run "headless" (without being prompted)
 ```
-python start.py --filename hello_wikipedia.py --goal "Write a program that searches wikipedia for Hello World and saves the article to hello_world.txt"
+python3 start.py --project midi_generator
 ```
 
-To run from a shell script (convenient!)
-```
-# edit the start.sh file to change the filename and goal
-bash start.sh
-```
+# Context
+Over the course of the loop, a context object gets built up which contains all of the data from the previous steps. This can be injeced into prompt templates using the `compose_prompt` function.
 
-To run with a different model
-```
-# available models are gpt-3.5-turbo-0613 or gpt-4-0613, 3.5 or 4 will work as args, too
-python start.py --model <model_name>
-```
+Here is the data that is available in the context object at each step:
+```python
+# Initial context object
+context = {
+    epoch,
+    name,
+    goal,
+    project_dir,
+    project_path
+}
 
-Type in the name of the file -- you can select one that exists, or a new file. Give instructions for what you want to do-- either improvements to an existing file, or instructions for a new file. Let it cook for a while, then give it a try once the task is done.
+# Added by orient step
+context = {
+    file_count,
+    filetree,
+    filetree_formatted,
+    python_files,
+    main_success,
+    main_error,
+    backup,
+    project_code: [{
+        rel_path,
+        file_path,
+        content,
+        validation_success,
+        validation_error,
+        test_success,
+        test_error,
+        test_output,
+    }],
+    project_code_formatted
+}
 
-To self-improve autocode
-```
-python start.py --filename core/utils.py --goal "Improve the autocode program by adding robust tests for each function, as well as descriptive docstrings."
-```
+# Added by decide step
+context = {
+    action_name,
+    reasoning
+}
 
-If your improvements are good, please submit a pull request.
+# Final context for actions
+context = {
+    epoch, # current iteration of the loop
+    name, # project name
+    goal, # project goal
+    project_dir,
+    project_path,
+    file_count,
+    filetree,
+    filetree_formatted, # formatted for prompt template
+    python_files,
+    main_success, # included in project_code_formatted
+    main_error, # included in project_code_formatted
+    backup,
+    project_code: [{
+        rel_path,
+        file_path,
+        content,
+        validation_success,
+        validation_error,
+        test_success,
+        test_error,
+        test_output,
+    }],
+    project_code_formatted, # formatted for prompt template
+    action_name,
+    reasoning # formatted for prompt template
+}
+```

@@ -3,6 +3,11 @@ __pycache__
 .vscode
 *.wav
 *.mp3
-*.jpg
+*.sf2
 backups/
 logs/
+project_data/
+.DS_Store
+memory/
+projects/
+.project_cache/
