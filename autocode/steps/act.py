@@ -1,12 +1,14 @@
 import os
 from easycompletion import compose_function, compose_prompt, openai_function_call
+from autocode.helpers.context import handle_packages
 
 from autocode.helpers.files import get_full_path
-
+from agentlogger import log
 
 create_prompt = """
+This is my project goal:
 {{goal}}
-{{test_conditions}}
+
 Task: Create a Python module that meets the stated goals, along with a set of tests for that module.
 You should include the following details
 - Plan: Think about the best approach and write out a reasoning. Explain your reasoning.
@@ -56,12 +58,23 @@ create_function = compose_function(
 
 
 def create_handler(arguments, context):
+    should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     packages = arguments["packages"]
     test = arguments["test"]
 
     project_dir = context["project_dir"]
+
+    log(
+        f"Creating main.py in {project_dir}"
+        + f"\n\nReasoning:\n{reasoning}"
+        + f"\n\nCode:\n{code}"
+        + f"\n\nTest:\n{test}",
+        title="action",
+        type="create",
+        log=should_log,
+    )
 
     # save code to main.py
     with open(f"{project_dir}/main.py", "w") as f:
@@ -71,18 +84,28 @@ def create_handler(arguments, context):
     with open(f"{project_dir}/main_test.py", "w") as f:
         f.write(test)
 
-    # write packages to requirements.txt
-    with open(f"{project_dir}/requirements.txt", "w") as f:
-        f.write("\n".join(packages))
+    context["packages"] = packages
+
     return context
 
 
 def write_complete_script_handler(arguments, context):
+    should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     filepath = arguments["filepath"]
     packages = arguments.get("packages", [])
     write_path = get_full_path(filepath, context["project_dir"])
+
+    log(
+        f"Writing complete script to {write_path}"
+        + f"\n\nReasoning:\n{reasoning}"
+        + f"\n\nCode:\n{code}",
+        title="action",
+        type="write",
+        log=should_log,
+    )
+
     with open(write_path, "w") as f:
         f.write(code)
     context["packages"] = packages
@@ -90,22 +113,39 @@ def write_complete_script_handler(arguments, context):
 
 
 def insert_code_handler(arguments, context):
+    should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     line_number = arguments["line_number"]
     packages = arguments.get("packages", [])
     filepath = arguments["filepath"]
     write_path = get_full_path(filepath, context["project_dir"])
+
+    log(
+        f"Inserting code into {write_path} at line {line_number}"
+        + f"\n\nReasoning:\n{reasoning}"
+        + f"\n\nCode:\n{code}",
+        title="action",
+        type="insert",
+        log=should_log,
+    )
+
     with open(write_path, "r") as f:
-        lines = f.readlines()
-        lines.insert(line_number, code)
+        text = f.read()
+    lines = text.split("\n")
+    lines.insert(line_number, code)
+    text = "\n".join(lines)
+
+    log(f"New code:\n{text}", title="action", type="insert", log=should_log)
+
     with open(write_path, "w") as f:
-        f.writelines(lines)
+        f.write(text)
     context["packages"] = packages
     return context
 
 
 def replace_code_handler(arguments, context):
+    should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     start_line = int(arguments["start_line"])
@@ -113,43 +153,80 @@ def replace_code_handler(arguments, context):
     packages = arguments.get("packages", [])
     filepath = arguments["filepath"]
     write_path = get_full_path(filepath, context["project_dir"])
+
+    log(
+        f"Replacing code in {write_path} from line {start_line} to {end_line}"
+        + f"\n\nReasoning:\n{reasoning}"
+        + f"\n\nCode:\n{code}",
+        title="action",
+        type="replace",
+        log=should_log,
+    )
 
     # Replace the code between start_lines and end_lines with new code
     with open(write_path, "r") as f:
         lines = f.readlines()
         lines[start_line - 1 : end_line] = [code]  # python's list indices start at 0
 
+    lines = "\n".join(lines)
+
+    log(f"New code:\n{lines}", title="action", type="replace", log=should_log)
+
     with open(write_path, "w") as f:
-        f.writelines(lines)
+        f.write(lines)
 
     context["packages"] = packages
     return context
 
 
 def remove_code_handler(arguments, context):
+    should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     start_line = int(arguments["start_line"])
     end_line = int(arguments["end_line"])
     filepath = arguments["filepath"]
     write_path = get_full_path(filepath, context["project_dir"])
 
+    log(
+        f"Removing code in {write_path} from line {start_line} to {end_line}"
+        + f"\n\nReasoning:\n{reasoning}",
+        title="action",
+        type="remove",
+        log=should_log,
+    )
+
     # Remove the code between start_lines and end_lines
     with open(write_path, "r") as f:
         lines = f.readlines()
         del lines[start_line - 1 : end_line]  # python's list indices start at 0
 
+    lines = "\n".join(lines)
+
+    log(f"New code:\n{lines}", title="action", type="remove", log=should_log)
+
     with open(write_path, "w") as f:
-        f.writelines(lines)
+        f.write(lines)
 
     return context
 
 
 def create_new_file_handler(arguments, context):
+    should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     filepath = arguments["filepath"]
     code = arguments["code"]
     test = arguments["test"]
     packages = arguments.get("packages", [])
+
+    log(
+        f"Creating new file {filepath}"
+        + f"\n\nReasoning:\n{reasoning}"
+        + f"\n\nCode:\n{code}"
+        + f"\n\nTest:\n{test}",
+        title="action",
+        type="create",
+        log=should_log,
+    )
 
     # Create a new file at filepath with code
     code_path = get_full_path(filepath, context["project_dir"])
@@ -162,6 +239,8 @@ def create_new_file_handler(arguments, context):
     )
     with open(test_path, "w") as f:
         f.write(test)
+
+    context["packages"] = packages
 
     return context
 
@@ -202,7 +281,7 @@ def get_actions():
         {
             "function": compose_function(
                 name="replace_code",
-                description="Replace some lines with a snippet of code. This is useful for replacing a function with a new implementation, for example. Requires a start and end line number.",
+                description="Replace lines in the original code with a new snippet of code.",
                 properties={
                     "reasoning": {
                         "type": "string",
@@ -210,7 +289,7 @@ def get_actions():
                     },
                     "filepath": {
                         "type": "string",
-                        "description": "The relative path of the file to insert code into, including .py. Must be an existing file from the provided project directory.",
+                        "description": "The relative path of the file to insert code into, including .py.",
                     },
                     "code": {
                         "type": "string",
@@ -345,6 +424,12 @@ def step(context):
 
     prompt = edit_prompt
     actions = get_actions()
+
+    quiet = context.get("quiet")
+    debug = context.get("debug")
+
+    should_log = not quiet or debug
+
     # each entry in functions is a dict
     # # get the "fuction" value from each entry in the function list
     functions = [f["function"] for f in actions]
@@ -370,9 +455,27 @@ def step(context):
     if context.get("reasoning") is None:
         # find {{reasoning}} in prompt and replace with empty string
         prompt = prompt.replace("{{reasoning}}", "")
+    else:
+        log(
+            f"Reasoning:\n{context['reasoning']}",
+            title="action",
+            type="reasoning",
+            log=should_log,
+        )
 
     text = compose_prompt(prompt, context)
+
+    log(f"Prompt:\n{text}", title="action", type="prompt", log=debug)
+
     response = openai_function_call(text=text, functions=functions)
+
+    log(
+        f"Response:\n{str(response)}",
+        title="action",
+        type="response",
+        color="debug",
+        log=debug,
+    )
 
     # find the function in functions with the name that matches response["function_name"]
     # then call the handler with the arguments and context
@@ -385,11 +488,23 @@ def step(context):
 
     arguments = response["arguments"]
     action = None
+
     for f in actions:
         if f["function"]["name"] == function_name:
             action = f
             break
 
-    print('Running action "{}"'.format(action["function"]["name"]))
+    log(
+        f"Running action {function_name} with arguments:\n{str(arguments)}",
+        title="action",
+        type="handler",
+        log=debug,
+    )
+
+    # call the handler with the arguments and context
     context = action["handler"](arguments, context)
+
+    # install any new imports if there are any
+    context = handle_packages(context)
+
     return context

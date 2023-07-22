@@ -38,7 +38,6 @@ def test_create_handler():
 
     assert os.path.isfile("test_dir/main.py")
     assert os.path.isfile("test_dir/main_test.py")
-    assert os.path.isfile("test_dir/requirements.txt")
     teardown_function()
 
 
@@ -54,6 +53,12 @@ def test_write_complete_script_handler():
     write_complete_script_handler(arguments, context)
 
     assert os.path.isfile("test_dir/main.py")
+    # read and print file contents
+    with open("test_dir/main.py", "r") as f:
+        lines = f.readlines()
+        text = "\n".join(lines)
+        assert "Hello, World!" in lines[0]
+        print(text)
     teardown_function()
 
 
@@ -70,7 +75,7 @@ def test_insert_code_handler():
 
     write_arguments = {
         "reasoning": "Testing write complete script handler",
-        "code": "print('Hello, World!')\nprint('An intereserted line should come before this!')",
+        "code": "print('Hello, World!')\nprint('An inserted line should come before this!')",
         "filepath": "main.py",
         "packages": [],
     }
@@ -80,10 +85,14 @@ def test_insert_code_handler():
 
 
     insert_code_handler(arguments, context)
-
+    
     with open("test_dir/main.py", "r") as f:
         lines = f.readlines()
-    print(lines)
+    with open("test_dir/main.py", "r") as f:
+        text = f.read()
+    print("Insert code:\n====================")
+    print(text)
+    print("====================")
     assert "Inserted line" in lines[1]
     teardown_function()
 
@@ -104,6 +113,9 @@ def test_replace_code_handler():
 
     with open("test_dir/main.py", "r") as f:
         lines = f.readlines()
+        text = "\n".join(lines)
+        print("Replace code:")
+        print(text)
     assert "New line" in lines[0]
     teardown_function()
 
@@ -129,7 +141,9 @@ def test_remove_code_handler():
     remove_code_handler(arguments, context)
 
     with open("test_dir/main.py", "r") as f:
-        lines = f.readlines()
+        text = f.read()
+        print(text)
+    lines = text.split("\n")
     assert "New line" not in lines
     teardown_function()
 

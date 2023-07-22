@@ -1,19 +1,12 @@
 import subprocess
 import ast
 from importlib_metadata import distributions
-
-
-def install_imports(code):
-    import_lines = get_imports(code)
-    for line in import_lines:
-        package = line.replace("import", "").strip()
-        subprocess.call(["pip", "install", package])
-        print(f"INSTALLED PACKAGE: {package}")
+from agentlogger import log
 
 
 def get_imports(code):
     # List installed packages
-    installed_packages = [d.metadata['name'] for d in distributions()]
+    installed_packages = [d.metadata["name"] for d in distributions()]
 
     tree = ast.parse(code)
 
@@ -31,10 +24,12 @@ def get_imports(code):
 
 def is_runnable(filename):
     try:
-        result = subprocess.run(["python", "-m", "py_compile", filename],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                universal_newlines=True)
+        result = subprocess.run(
+            ["python", "-m", "py_compile", filename],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
 
         if result.stderr and result.stderr != "":
             return False
@@ -42,10 +37,11 @@ def is_runnable(filename):
         if result.returncode != 0:
             return False
     except Exception as e:
-        print(f"An error occurred: {e}")
+        log(f"An error occurred: {e}", title="is_runnable", type="error")
         return False
 
     return True
+
 
 def contains_function_definition(code):
     """Checks if a string of Python code contains any function definitions."""
@@ -145,11 +141,11 @@ def validate_code(code):
             "error": "The file is not long enough to do much.",
         }
 
-    if "import" not in code:
-        return {
-            "success": False,
-            "error": "The file doesn't have any imports. Imports are needed to do anything useful. Please add some imports to the top of the file.",
-        }
+    # if "import" not in code:
+    #     return {
+    #         "success": False,
+    #         "error": "The file doesn't have any imports. Imports are needed to do anything useful. Please add some imports to the top of the file.",
+    #     }
 
     if "def" not in code:
         return {
@@ -194,7 +190,9 @@ def run_code_tests(script_path):
     """Run pytest on a given Python file."""
 
     # Run the command and get the output
-    result = subprocess.run(["python", "-m", "pytest", script_path], capture_output=True, text=True)
+    result = subprocess.run(
+        ["python", "-m", "pytest", script_path], capture_output=True, text=True
+    )
     if result.stderr == "" or result.stderr is None:
         result.stderr = False
     # Return the exit code. The exit code is 0 if the tests pass.

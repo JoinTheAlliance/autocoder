@@ -3,6 +3,5 @@ agentmemory
 agentbrowser
 easycompletion
 agentloop
-pyfiglet
-rich
+agentlogger
 pytest

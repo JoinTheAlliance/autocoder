@@ -3,6 +3,7 @@ from easycompletion import (
     compose_prompt,
     compose_function,
 )
+from autocode.helpers.code import validate_file
 
 from autocode.helpers.context import (
     backup_project,
@@ -14,14 +15,13 @@ from autocode.helpers.context import (
     validate_files,
 )
 
+from agentlogger import log
+
 reasoning_prompt = """
 {{project_code_formatted}}
 
-Client's stated goals:
+This is my goal:
 {{goal}}
-
-Client's stated test pass conditions:
-{{test_conditions}}
 
 Note: I have written this code to meet a client's stated goal. The code should also pass the client's stated tests.
 
@@ -68,9 +68,19 @@ def step(context, loop_dict):
     """
     context = get_file_count(context)
 
+    quiet = context.get("quiet")
+    debug = context.get("debug")
+
+    should_log = not quiet or debug
+
     # If we have no files, go immediately to the create step
     if context["file_count"] == 0:
-        print("No files found, must be a new project")
+        log(
+            "Creating main.py for new project",
+            title="new project",
+            type="start",
+            log=should_log,
+        )
         return context
 
     context = backup_project(context)
@@ -82,23 +92,73 @@ def step(context, loop_dict):
 
     # If we have an error, go immediately to the edit step
     if context.get("main_success", None) is False:
+        log(
+            f"main.py failed to run\nError:\n{context.get('main_error', 'unknown')}",
+            title="main.py",
+            type="error",
+            log=should_log,
+        )
         return context
 
     # If any of the files failed to validate for any reason, go immediately to the edit step
-    if context["project_validated"] is False or context["project_tested"] is False:
+    if context["project_validated"] is False:
+        validation_errors = ""
+        for file_dict in context["project_code"]:
+            file_path = file_dict["absolute_path"]
+            validation = validate_file(file_path)
+            if validation["success"] is False:
+                validation_errors += f"\n{file_path}:\n{validation['error']}\n"
+        log(
+            "Project failed to validate. Errors:\n"
+            + validation_errors,
+            title="validation",
+            type="error",
+            log=should_log,
+        )
         return context
+    
+    if context["project_tested"] is False:
+        test_errors = ""
+        for file_dict in context["project_code"]:
+            if file_dict.get("test_error") is not None:
+                test_errors += f"\n{file_dict['absolute_path']}:\n{file_dict['test_error']}\n"
+        log(
+            "Project failed to validate. Errors:\n" + test_errors,
+            title="validation",
+            type="error",
+            log=should_log,
+        )
+        return context
+
+    text = compose_prompt(reasoning_prompt, context)
+    functions = compose_project_validation_function()
+
+    log(f"Prompt:\n{text}", title="reasoning", type="debug", log=debug)
 
     # Handle the auto case
     response = openai_function_call(
-        text=compose_prompt(reasoning_prompt, context),
-        functions=compose_project_validation_function(),
+        text=text,
+        functions=functions,
+    )
+
+    log(
+        f"Response:\n{str(response)}",
+        title="reasoning",
+        type="response",
+        color="debug",
+        log=debug,
     )
 
     # Add the action reasoning to the context object
     is_valid_and_complete = response["arguments"]["is_valid_and_complete"]
 
     if is_valid_and_complete is True:
-        print("SUCCESS")
+        log(
+            "Project is valid and complete. Good luck!",
+            title="validation",
+            type="success",
+            log=should_log,
+        )
         loop_dict.stop()
 
     context["reasoning"] = response["arguments"]["reasoning"]

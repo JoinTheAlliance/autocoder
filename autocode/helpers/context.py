@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from autocode.helpers.files import (
     count_files,
@@ -7,8 +8,8 @@ from autocode.helpers.files import (
     get_python_files,
     zip_python_files,
 )
-from autocode.helpers.code import run_code, run_code_tests, validate_file
-
+from autocode.helpers.code import file_exists, run_code, run_code_tests, validate_file
+from agentlogger import log
 
 def get_file_count(context):
     project_dir = context["project_dir"]
@@ -33,7 +34,7 @@ def read_and_format_code(context):
         test_error = project_dict.get("test_error", None)
 
         # adding file content to the string with line numbers
-        project_files_str += "\n================================================================================n"
+        project_files_str += "\n================================================================================\n"
         project_files_str += "Path (Relative): {}\nPath (Absolute): {}\n".format(
             str(rel_path), absolute_path
         )
@@ -49,10 +50,10 @@ def read_and_format_code(context):
             project_files_str += "Tested: {}\n".format(test_success)
         if test_success is False:
             project_files_str += "Pytest Error: {}\n".format(test_error)
-        project_files_str += "\n------------------------------------- CODE -------------------------------------n"
+        project_files_str += "\n------------------------------------- CODE -------------------------------------\n"
         for i, line in enumerate(content):
             project_files_str += "[{}] {}".format(i + 1, line)
-        project_files_str += "\n================================================================================n"
+        project_files_str += "\n================================================================================\n"
 
     context["project_code_formatted"] = project_files_str
     return context
@@ -161,4 +162,34 @@ def backup_project(context):
     project_dir = context["project_dir"]
     project_name = context["name"]
     context["backup"] = zip_python_files(project_dir, project_name)
+    return context
+
+def handle_packages(context):
+    packages = context.get("packages", [])
+    if len(packages) == 0:
+        return context
+    project_dir = context["project_dir"]
+    # check if requirements.txt exists, if it does read it
+    old_packages = []
+    if file_exists(f"{project_dir}/requirements.txt"):
+        with open(f"{project_dir}/requirements.txt", "r") as f:
+            old_packages = f.readlines()
+
+    # join packages and old_packages
+    packages = list(set(packages + old_packages))
+
+    # for each package in packages, add to project_dir/requirements.txt
+    with open(f"{project_dir}/requirements.txt", "w") as f:
+        f.write("\n".join(packages)) + "\n"
+
+    should_log = not context.get("quiet") or context.get("debug")
+    log(
+        f"Installing packages: {packages}",
+        title="packages",
+        type="system",
+        log=should_log,
+    )
+
+    subprocess.call(["pip", "install", '-r requirements.txt'])
+    context["packages"] = []
     return context

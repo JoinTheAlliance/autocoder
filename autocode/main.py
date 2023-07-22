@@ -1,29 +1,36 @@
 import os
 from dotenv import load_dotenv
-from pyfiglet import Figlet
-from rich.console import Console
 
-from agentloop import start
+from agentloop import start, step_with_input_key
 
 from autocode.steps import reason
 from autocode.steps import act
+from agentlogger import log, print_header
 
 # Suppress warning
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 load_dotenv()  # take environment variables from .env.
 
+
 def main(project_data):
     """
     Main entrypoint for autocode. Usually called from the CLI.
     """
 
-    # Print logo
-    f = Figlet(font="letters")
-    console = Console()
-    print("\n")
-    console.print(f.renderText("autocode"), style="yellow")
-    console.print("Initializing...\n", style="BRIGHT_BLACK")
+    print_header(text="autocode", color="yellow", font="letters")
+    log("Initializing...", title="autocode", type="system")
+
+    import sys
+
+    if "-q" in sys.argv or os.getenv("QUIET") == "True" or os.getenv("QUIET") == "true":
+        project_data["quiet"] = True
+    else:
+        project_data["quiet"] = False
+    if "-d" in sys.argv or os.getenv("DEBUG") == "True" or os.getenv("DEBUG") == "true":
+        project_data["debug"] = True
+    else:
+        project_data["debug"] = False
 
     def initialize(context):
         if context is None:
@@ -31,5 +38,5 @@ def main(project_data):
             context = project_data
         return context
 
-    loop_dict = start([initialize, reason, act])
+    loop_dict = step_with_input_key(start([initialize, reason, act], stepped=True))
     return loop_dict

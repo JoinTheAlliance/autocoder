@@ -3,20 +3,19 @@ import time
 import zipfile
 from pathlib import Path
 import fnmatch
+from agentlogger import log
 
 
 def count_files(dir):
     # check if the dir exists
     if not os.path.exists(dir):
-        print("Directory does not exist.")
+        log("Directory does not exist.", title="count_files", type="error")
         return 0
     count = len(
         [name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))]
     )
     return count
 
-
-import os
 
 def get_full_path(filepath, project_dir):
     """
@@ -38,19 +37,17 @@ def get_full_path(filepath, project_dir):
 
     # Calculate the common path between project_dir and directory_path
     common_path = os.path.commonpath([project_dir, directory_path])
-    
+
     # Remove the common_path from directory_path and join it with project_dir
-    sub_path = directory_path.replace(common_path, '').lstrip(os.path.sep)
+    sub_path = directory_path.replace(common_path, "").lstrip(os.path.sep)
     full_path = os.path.join(project_dir, sub_path)
-    
+
     if not os.path.exists(full_path):
         os.makedirs(full_path)
 
     full_path = os.path.join(full_path, filename)
     full_path = os.path.abspath(full_path)
     return full_path
-
-
 
 
 def file_tree_to_dict(startpath):
