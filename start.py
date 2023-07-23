@@ -8,9 +8,6 @@ from prompt_toolkit.keys import Keys
 from prompt_toolkit import PromptSession
 from termcolor import colored
 
-from dotenv import load_dotenv
-load_dotenv()  # take environment variables from .env.
-
 style = Style.from_dict(
     {
         "dialog": "bg:#88ff88",
@@ -92,7 +89,32 @@ def save_project_data(name, project_data):
 
 
 def run(project_data):
+    # read and parse _options.json
+    options_path = "./project_data/_options.json"
+    if os.path.exists(options_path):
+        with open(options_path, "r") as f:
+            options = json.load(f)
+    api_key = (
+        project_data.get("api_key")
+        or options.get("api_key")
+        or os.environ.get("OPENAI_API_KEY")
+    )
+    if api_key is not None:
+        os.environ["OPENAI_API_KEY"] = api_key
+    while not api_key:
+        api_key = input("Enter your API OpenAI key: ")
+        if not api_key.startswith("sk-") or len(api_key) < 8:
+            print("Invalid API key.")
+            api_key = input("Enter your API key: ")
+        else:
+            os.environ["OPENAI_API_KEY"] = api_key
+            project_data["api_key"] = api_key
+            options["api_key"] = api_key
+            with open(options_path, "w") as f:
+                json.dump(options, f)
+
     from autocoder.main import main as autocoder
+
     autocoder(project_data)
     sys.exit(0)
 
@@ -155,17 +177,6 @@ def main():
     if "--project" in sys.argv:
         project_path = sys.argv[sys.argv.index("--project") + 1]
 
-    while not os.environ.get("OPENAI_API_KEY"):
-        print("OPENAI_API_KEY env var is not set. Enter it here:")
-        api_key = input("Enter your API key: ")
-        if not api_key.startswith("sk-") or len(api_key) < 8:
-            print("Invalid API key.")
-            api_key = input("Enter your API key: ")
-        else:
-            with open(".env", "w") as f:
-                f.write(f"OPENAI_API_KEY={api_key}")
-            os.environ["OPENAI_API_KEY"] = api_key
-
     if project_path is not None:
         with open(f"./project_data/{project_path}.json") as f:
             run(json.load(f))
@@ -218,11 +229,22 @@ def main():
 def handle_options_menu():
     # Load existing options or set defaults
     options_path = "./project_data/_options.json"
+    default_options = {
+        "stepped": False,
+        "logging": "Normal",
+        "api_key": os.environ.get("OPENAI_API_KEY", ""),
+        "model": "gpt-3.5-turbo",
+    }
+
     if os.path.exists(options_path):
         with open(options_path, "r") as f:
             options = json.load(f)
+        # Check for missing keys and set to default if not present
+        for key in default_options:
+            if key not in options:
+                options[key] = default_options[key]
     else:
-        options = {"stepped": False, "logging": "Normal", "api_key": os.environ.get("OPENAI_API_KEY", "")}
+        options = default_options
 
     while True:
         option = button_dialog(
@@ -232,7 +254,8 @@ def handle_options_menu():
                 ("Stepped " + ("ON" if options["stepped"] else "OFF"), "Stepped"),
                 ("Logging", "Logging"),
                 ("API Key", "API Key"),
-                ("Back", "Back")
+                ("Model", "Model"),
+                ("Back", "Back"),
             ],
             style=style,
         ).run()
@@ -247,10 +270,13 @@ def handle_options_menu():
                 title="Logging Level",
                 text="Choose a logging level:",
                 buttons=[
-                    (f"Normal{' *' if options['logging'] == 'Normal' else ''}", "Normal"),
+                    (
+                        f"Normal{' *' if options['logging'] == 'Normal' else ''}",
+                        "Normal",
+                    ),
                     (f"Debug{' *' if options['logging'] == 'Debug' else ''}", "Debug"),
                     (f"Quiet{' *' if options['logging'] == 'Quiet' else ''}", "Quiet"),
-                    ("Back", "Back")
+                    ("Back", "Back"),
                 ],
                 style=style,
             ).run()
@@ -258,8 +284,28 @@ def handle_options_menu():
                 continue
             options["logging"] = logging_option
         elif option == "API Key":
-            new_key = input(f"Enter your new API key (default: {options['api_key']}): ") or options['api_key']
+            new_key = (
+                input(f"Enter your new API key (default: {options['api_key']}): ")
+                or options["api_key"]
+            )
             options["api_key"] = new_key
+        elif option == "Model":
+            model_option = button_dialog(
+                title="Model",
+                text="Choose a model:",
+                buttons=[
+                    (
+                        f"gpt-3.5-turbo{' *' if options['model'] == 'gpt-3.5-turbo' else ''}",
+                        "gpt-3.5-turbo",
+                    ),
+                    (f"gpt-4{' *' if options['model'] == 'gpt-4' else ''}", "gpt-4"),
+                    ("Back", "Back"),
+                ],
+                style=style,
+            ).run()
+            if model_option == "Back":
+                continue
+            options["model"] = model_option
 
         # Save options after each modification
         with open(options_path, "w") as f:
