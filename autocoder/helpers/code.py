@@ -1,5 +1,6 @@
 import subprocess
 import ast
+import black
 from importlib_metadata import distributions
 from agentlogger import log
 
@@ -151,8 +152,26 @@ def validate_code(code):
 
 
 def save_code(code, filename):
+    try:
+        code = format_code(code)
+    except Exception as e:
+        log(f"Code could not be formatted: {e}", title="save_code", type="warning")
+        pass
     with open(filename, "w") as f:
         f.write(code)
+
+
+def format_code(code: str, line_length: int = 110) -> str:
+    """Format python code string with black.
+
+    Parameters:
+    code (str): The python code to be formatted.
+    line_length (int): Maximum line length. Default is 88.
+
+    Returns:
+    str: The formatted python code.
+    """
+    return black.format_str(code, mode=black.FileMode(line_length=line_length))
 
 
 def run_code(filename):

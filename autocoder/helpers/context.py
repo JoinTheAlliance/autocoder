@@ -172,10 +172,6 @@ def backup_project(context):
 def handle_packages(context):
     # Get the set of standard library modules
     std_module_set = set(sys.builtin_module_names)
-    # Get the set of all available Python modules
-    std_module_set.update(
-        set((name for loader, name, ispkg in pkgutil.walk_packages()))
-    )
 
     packages = context.get("packages", [])
     project_dir = context["project_dir"]
@@ -190,12 +186,13 @@ def handle_packages(context):
     packages = list(set(packages + old_packages))
 
     should_log = not context.get("quiet") or context.get("debug")
-    log(
-        f"Installing packages: {packages}",
-        title="packages",
-        type="system",
-        log=should_log,
-    )
+    if packages is not None and len(packages) > 0:
+        log(
+            f"Installing packages: {packages}",
+            title="packages",
+            type="system",
+            log=should_log,
+        )
 
     # Get a list of currently installed packages
     installed = {pkg.key for pkg in pkg_resources.working_set}

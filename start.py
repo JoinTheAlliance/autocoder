@@ -184,7 +184,7 @@ def main():
                 ("Run", "Run"),
                 ("Delete", "Delete"),
             ]
-        buttons += [("Quit", "Quit")]
+        buttons += [("Options", "Options"), ("Quit", "Quit")]
 
         action = button_dialog(
             title="autocoder",
@@ -192,8 +192,11 @@ def main():
             buttons=buttons,
             style=style,
         ).run()
-
-        if action == "Quit":
+        if action == "Options":
+            options = handle_options_menu()
+            if options.get("api_key"):
+                os.environ["OPENAI_API_KEY"] = options["api_key"]
+        elif action == "Quit":
             break
         elif action == "New":
             new_or_edit_project(is_editing=False)
@@ -211,6 +214,56 @@ def main():
         if not get_existing_projects():
             continue
 
+
+def handle_options_menu():
+    # Load existing options or set defaults
+    options_path = "./project_data/_options.json"
+    if os.path.exists(options_path):
+        with open(options_path, "r") as f:
+            options = json.load(f)
+    else:
+        options = {"stepped": False, "logging": "Normal", "api_key": os.environ.get("OPENAI_API_KEY", "")}
+
+    while True:
+        option = button_dialog(
+            title="Options Menu",
+            text="Choose an option to modify:",
+            buttons=[
+                ("Stepped " + ("ON" if options["stepped"] else "OFF"), "Stepped"),
+                ("Logging", "Logging"),
+                ("API Key", "API Key"),
+                ("Back", "Back")
+            ],
+            style=style,
+        ).run()
+
+        if option == "Back":
+            return options
+
+        if option == "Stepped":
+            options["stepped"] = not options["stepped"]
+        elif option == "Logging":
+            logging_option = button_dialog(
+                title="Logging Level",
+                text="Choose a logging level:",
+                buttons=[
+                    (f"Normal{' *' if options['logging'] == 'Normal' else ''}", "Normal"),
+                    (f"Debug{' *' if options['logging'] == 'Debug' else ''}", "Debug"),
+                    (f"Quiet{' *' if options['logging'] == 'Quiet' else ''}", "Quiet"),
+                    ("Back", "Back")
+                ],
+                style=style,
+            ).run()
+            if logging_option == "Back":
+                continue
+            options["logging"] = logging_option
+        elif option == "API Key":
+            new_key = input(f"Enter your new API key (default: {options['api_key']}): ") or options['api_key']
+            options["api_key"] = new_key
+
+        # Save options after each modification
+        with open(options_path, "w") as f:
+            json.dump(options, f)
 
 
 def delete_project():

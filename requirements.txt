@@ -6,3 +6,4 @@ agentloop
 agentlogger
 pytest
 prompt_toolkit
+black
