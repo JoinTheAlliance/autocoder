@@ -42,8 +42,8 @@ def main(project_data):
 
     if (
         project_data.get("step") is None
-        and "-s" in sys.argv
-        or os.getenv("STEP", "").lower() == "true"
+        and ("-s" in sys.argv
+        or os.getenv("STEP", "").lower() == "true")
     ):
         project_data["step"] = True
     else:
@@ -62,6 +62,6 @@ def main(project_data):
 
     loop_dict = start([initialize, reason, act], stepped=project_data["step"])
     if project_data["step"]:
-        step_with_input_key(loop_dict, "enter")
+        step_with_input_key(loop_dict)
 
     return loop_dict

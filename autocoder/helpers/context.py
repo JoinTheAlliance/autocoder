@@ -1,5 +1,7 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
+
+import pkg_resources
 
 from autocoder.helpers.files import (
     count_files,
@@ -10,6 +12,7 @@ from autocoder.helpers.files import (
 )
 from autocoder.helpers.code import file_exists, run_code, run_code_tests, validate_file
 from agentlogger import log
+
 
 def get_file_count(context):
     project_dir = context["project_dir"]
@@ -50,7 +53,7 @@ def read_and_format_code(context):
             project_files_str += "Tested: {}\n".format(test_success)
         if test_success is False:
             project_files_str += "Pytest Error: {}\n".format(test_error)
-        project_files_str += "\n------------------------------------- CODE -------------------------------------\n"
+        project_files_str += "\nLine # ------------------------------ CODE -------------------------------------\n"
         for i, line in enumerate(content):
             project_files_str += "[{}] {}".format(i + 1, line)
         project_files_str += "\n================================================================================\n"
@@ -164,23 +167,19 @@ def backup_project(context):
     context["backup"] = zip_python_files(project_dir, project_name)
     return context
 
+
 def handle_packages(context):
     packages = context.get("packages", [])
-    if len(packages) == 0:
-        return context
     project_dir = context["project_dir"]
     # check if requirements.txt exists, if it does read it
     old_packages = []
     if file_exists(f"{project_dir}/requirements.txt"):
         with open(f"{project_dir}/requirements.txt", "r") as f:
-            old_packages = f.readlines()
-
+            old_packages = f.read().split("\n")
+    # remove empty strings
+    old_packages = [p for p in old_packages if p != "" and p != "\n"]
     # join packages and old_packages
     packages = list(set(packages + old_packages))
-
-    # for each package in packages, add to project_dir/requirements.txt
-    with open(f"{project_dir}/requirements.txt", "w") as f:
-        f.write("\n".join(packages)) + "\n"
 
     should_log = not context.get("quiet") or context.get("debug")
     log(
@@ -190,6 +189,31 @@ def handle_packages(context):
         log=should_log,
     )
 
-    subprocess.call(["pip", "install", '-r requirements.txt'])
+    # Get a list of currently installed packages
+    installed = {pkg.key for pkg in pkg_resources.working_set}
+
+    # Loop through the packages
+    for package in packages:
+        # Check if package is installed
+        if package not in installed:
+            # Install missing package
+            try:
+                result = subprocess.run(["python", "-m", "pip", "install", package], 
+                                        stdout=subprocess.PIPE, 
+                                        stderr=subprocess.PIPE,
+                                        text=True,
+                                        check=True)
+
+            except subprocess.CalledProcessError as e:
+                # Check if the error message contains the expected error
+                if 'Could not find a version that satisfies the requirement' in e.stderr:
+                    # Extract the package name from the error message
+                    error_package = e.stderr.split(' ')[10]
+                    packages.remove(error_package)
+
+    # for each package in packages, add to project_dir/requirements.txt
+    with open(f"{project_dir}/requirements.txt", "w") as f:
+        f.write("\n".join(packages))
+
     context["packages"] = []
     return context

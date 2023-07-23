@@ -5,3 +5,4 @@ easycompletion
 agentloop
 agentlogger
 pytest
+prompt_toolkit

@@ -1,4 +1,5 @@
 import os
+import re
 from easycompletion import compose_function, compose_prompt, openai_function_call
 from autocoder.helpers.context import handle_packages
 
@@ -89,10 +90,26 @@ def create_handler(arguments, context):
     return context
 
 
+def remove_line_numbers(text):
+    # Regular expression pattern to match '[n]' at the beginning of a line
+    pattern = r"^\s*\[\d+\]\s*"
+    
+    # Split the text into lines
+    lines = text.split('\n')
+
+    # Remove the pattern from each line
+    cleaned_lines = [re.sub(pattern, '', line) for line in lines]
+
+    # Join the cleaned lines back into a single string
+    cleaned_text = '\n'.join(cleaned_lines)
+
+    return cleaned_text
+
 def write_complete_script_handler(arguments, context):
     should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
-    code = arguments["code"]
+    code = remove_line_numbers(arguments["code"])
+
     filepath = arguments["filepath"]
     packages = arguments.get("packages", [])
     write_path = get_full_path(filepath, context["project_dir"])
@@ -347,68 +364,68 @@ def get_actions():
             ),
             "handler": write_complete_script_handler,
         },
-        {
-            "function": compose_function(
-                name="remove_code",
-                description="Removes a range of lines from the code. Requires a start and end line number.",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Why are you removing this code?",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The relative path of the file to remove code from, including .py. Must be an existing file from the provided project directory.",
-                    },
-                    "start_line": {
-                        "type": "number",
-                        "description": "The start line number of the code to remove.",
-                    },
-                    "end_line": {
-                        "type": "number",
-                        "description": "The end line number of the code to remove.",
-                    },
-                },
-                required_properties=["reasoning", "start_line", "end_line"],
-            ),
-            "handler": remove_code_handler,
-        },
-        {
-            "function": compose_function(
-                name="create_new_file",
-                description="Create a Python file",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The relative path of the file to create, starting with './' and ending with '.py'. Should be relative to the project directory",
-                    },
-                    "code": {
-                        "type": "string",
-                        "description": "The full code for the module names <filename>, including all imports and code",
-                    },
-                    "packages": {
-                        "type": "array",
-                        "description": "A list of packages to install, derived from the imports of the code.",
-                        "items": {"type": "string"},
-                    },
-                    "test": {
-                        "type": "string",
-                        "description": "The full code for <filename>_test.py, which is a set of functional pytest-compatible tests for the module code, including all imports and code.",
-                    },
-                },
-                required_properties=[
-                    "reasoning",
-                    "filepath",
-                    "code",
-                    "test",
-                ],
-            ),
-            "handler": create_new_file_handler,
-        },
+        # {
+        #     "function": compose_function(
+        #         name="remove_code",
+        #         description="Removes a range of lines from the code. Requires a start and end line number.",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "Why are you removing this code?",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The relative path of the file to remove code from, including .py. Must be an existing file from the provided project directory.",
+        #             },
+        #             "start_line": {
+        #                 "type": "number",
+        #                 "description": "The start line number of the code to remove.",
+        #             },
+        #             "end_line": {
+        #                 "type": "number",
+        #                 "description": "The end line number of the code to remove.",
+        #             },
+        #         },
+        #         required_properties=["reasoning", "start_line", "end_line"],
+        #     ),
+        #     "handler": remove_code_handler,
+        # },
+        # {
+        #     "function": compose_function(
+        #         name="create_new_file",
+        #         description="Create a Python file",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The relative path of the file to create, starting with './' and ending with '.py'. Should be relative to the project directory",
+        #             },
+        #             "code": {
+        #                 "type": "string",
+        #                 "description": "The full code for the module names <filename>, including all imports and code",
+        #             },
+        #             "packages": {
+        #                 "type": "array",
+        #                 "description": "A list of packages to install, derived from the imports of the code.",
+        #                 "items": {"type": "string"},
+        #             },
+        #             "test": {
+        #                 "type": "string",
+        #                 "description": "The full code for <filename>_test.py, which is a set of functional pytest-compatible tests for the module code, including all imports and code.",
+        #             },
+        #         },
+        #         required_properties=[
+        #             "reasoning",
+        #             "filepath",
+        #             "code",
+        #             "test",
+        #         ],
+        #     ),
+        #     "handler": create_new_file_handler,
+        # },
     ]
 
 

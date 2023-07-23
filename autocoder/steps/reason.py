@@ -171,8 +171,6 @@ def step(context, loop_dict):
             type="success",
             log=should_log,
         )
-        print("loop_dict")
-        print(loop_dict)
         stop(loop_dict)
         context["running"] = False
 
