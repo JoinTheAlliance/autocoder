@@ -6,11 +6,7 @@ from autocoder.helpers.context import handle_packages
 from autocoder.helpers.files import get_full_path
 from agentlogger import log
 
-create_prompt = """
-This is my project goal:
-{{goal}}
-
-Task: Create a Python module that meets the stated goals, along with a set of tests for that module.
+create_prompt = """Task: Create a Python module that meets the stated goals, along with a set of tests for that module.
 You should include the following details
 - Plan: Think about the best approach and write out a reasoning. Explain your reasoning.
 - Code: The full code for main.py, including all imports and code.
@@ -21,15 +17,26 @@ You should include the following details
 - Test: The code for main_test.py, including all imports and functions. Tests should use a functional style with the assert keyword and run with pytest.
     - All tests should be in their own functions and have setup and teardown so that they are isolated from each other.
     - There should be multiple tests for each function, including tests for edge cases, different argument cases and failure cases.
-"""
+This is my project goal:
+{{goal}}"""
 
-edit_prompt = """
+edit_prompt = """Assistant Notes:
+- Please choose one of the available functions to alter one of the files.
+- Create a new file if and only if it is necessary to meet the stated goals.
+- Use a functional style for code and tests.
+- Each action function can only do one thing, so if you need to do multiple things, you should just rewrite the entire module script
+- Do not include line numbers [#] at the beginning of the lines in your response.
+- Add comments to your code, explaining anything that might not be obvious to someone reading the code.
+- The project will only pass validation if main.py contains a main function which is called if __name__ == '__main__' (which should be located at the bottom of the script)
+
+This is my project goal:
 {{goal}}
-{{project_code_formatted}}
+
 {{reasoning}}
+{{project_code_formatted}}
 {{error}}
 {{available_actions}}
-Please use a function from the available functions.
+Of the available actions, what should I do?
 """
 
 create_function = compose_function(
@@ -93,17 +100,18 @@ def create_handler(arguments, context):
 def remove_line_numbers(text):
     # Regular expression pattern to match '[n]' at the beginning of a line
     pattern = r"^\s*\[\d+\]\s*"
-    
+
     # Split the text into lines
-    lines = text.split('\n')
+    lines = text.split("\n")
 
     # Remove the pattern from each line
-    cleaned_lines = [re.sub(pattern, '', line) for line in lines]
+    cleaned_lines = [re.sub(pattern, "", line) for line in lines]
 
     # Join the cleaned lines back into a single string
-    cleaned_text = '\n'.join(cleaned_lines)
+    cleaned_text = "\n".join(cleaned_lines)
 
     return cleaned_text
+
 
 def write_complete_script_handler(arguments, context):
     should_log = not context.get("quiet") or context.get("debug")
@@ -472,6 +480,7 @@ def step(context):
     if context.get("error") is None:
         # find {{error}} in prompt and replace with empty string
         prompt = prompt.replace("{{error}}", "")
+        # TODO: what is the error or errors?
 
     if context.get("reasoning") is None:
         # find {{reasoning}} in prompt and replace with empty string
@@ -486,17 +495,7 @@ def step(context):
 
     text = compose_prompt(prompt, context)
 
-    log(f"Prompt:\n{text}", title="action", type="prompt", log=debug)
-
-    response = openai_function_call(text=text, functions=functions)
-
-    log(
-        f"Response:\n{str(response)}",
-        title="action",
-        type="response",
-        color="yellow",
-        log=debug,
-    )
+    response = openai_function_call(text=text, functions=functions, debug=debug)
 
     # find the function in functions with the name that matches response["function_name"]
     # then call the handler with the arguments and context
@@ -515,8 +514,14 @@ def step(context):
             action = f
             break
 
+    sorted_args = sorted(arguments.items(), key=lambda x: len(x[1]))
+    args_str = "\n".join(
+        f"*** {key} ***\n{value}" if "\n" in value else f"*** {key}: {value}"
+        for key, value in sorted_args
+    )
+
     log(
-        f"Running action {function_name} with arguments:\n{str(arguments)}",
+        f"Running action {function_name} with arguments:\n{args_str}",
         title="action",
         type="handler",
         log=debug,

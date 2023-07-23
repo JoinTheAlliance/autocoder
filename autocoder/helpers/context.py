@@ -22,7 +22,7 @@ def get_file_count(context):
 
 def read_and_format_code(context):
     # Read the contents of all python files and create a list of dicts
-    project_files_str = "Project Files:\n"
+    project_files_str = "Project Files:"
 
     main_success = context.get("main_success", None)
     main_error = context.get("main_error", None)

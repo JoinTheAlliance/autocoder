@@ -20,9 +20,6 @@ def main(project_data):
     Main entrypoint for autocoder. Usually called from the CLI.
     """
 
-    print_header(text="autocoder", color="yellow", font="slant")
-    log("Initializing...", title="autocoder", type="system")
-
     if (
         project_data.get("quiet") is None
         and "-q" in sys.argv
@@ -48,6 +45,10 @@ def main(project_data):
         project_data["step"] = True
     else:
         project_data["step"] = False
+
+    if project_data["quiet"] is False:
+        print_header(text="autocoder", color="yellow", font="slant")
+        log("Initializing...", title="autocoder", type="system", panel=False)
 
     # check if project_dir exists and create it if it doesn't
     if not os.path.exists(project_data["project_dir"]):

@@ -145,20 +145,11 @@ def step(context, loop_dict):
     text = compose_prompt(reasoning_prompt, context)
     functions = compose_project_validation_function()
 
-    log(f"Prompt:\n{text}", title="reasoning", type="debug", log=debug)
-
     # Handle the auto case
     response = openai_function_call(
         text=text,
         functions=functions,
-    )
-
-    log(
-        f"Response:\n{str(response)}",
-        title="reasoning",
-        type="response",
-        color="yellow",
-        log=debug,
+        debug=debug
     )
 
     # Add the action reasoning to the context object
