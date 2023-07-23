@@ -113,10 +113,11 @@ def test_validate_code_failure():
 
 def test_save_code():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-        code = "print('Hello, world!')"
+        code = 'print("Hello, world!"")'
         save_code(code, tmp.name)
     with open(tmp.name, "r") as f:
-        assert f.read() == code
+        new_code = f.read()
+        assert new_code == code
     os.remove(tmp.name)
 
 

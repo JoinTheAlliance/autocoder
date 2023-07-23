@@ -36,7 +36,7 @@ This is my project goal:
 
 {{reasoning}}
 {{project_code_formatted}}
-{{error}}
+{{errors_formatted}}
 {{short_actions}}
 Please call the appropriate function.
 """
@@ -293,7 +293,6 @@ def delete_file_handler(arguments, context):
             type="warning",
             log=should_log,
         )
-        context["error"] = f"File {filepath} does not exist"
 
     return context
 
@@ -452,7 +451,7 @@ def get_actions():
             ),
             "handler": delete_file_handler,
         },
-                {
+        {
             "function": compose_function(
                 name="write_complete_module",
                 description="Writes a python module, including imports and functions.",
@@ -516,12 +515,9 @@ def step(context):
         [f"{fn['function']['name']}: {fn['function']['description']}" for fn in actions]
     )
 
-    context["short_actions"] = "Available functions:" + ", ".join([fn["function"]["name"] for fn in actions])
-
-    if context.get("error") is None:
-        # find {{error}} in prompt and replace with empty string
-        prompt = prompt.replace("{{error}}", "")
-        # TODO: what is the error or errors?
+    context["short_actions"] = "Available functions:" + ", ".join(
+        [fn["function"]["name"] for fn in actions]
+    )
 
     if context.get("reasoning") is None:
         # find {{reasoning}} in prompt and replace with empty string
@@ -556,7 +552,9 @@ def step(context):
             break
 
     args_str = "\n".join(
-        f"*** {key} ***\n{str(value)}" if "\n" in str(value) else f"*** {key}: {str(value)}"
+        f"*** {key} ***\n{str(value)}"
+        if "\n" in str(value)
+        else f"*** {key}: {str(value)}"
         for key, value in arguments.items()
     )
 

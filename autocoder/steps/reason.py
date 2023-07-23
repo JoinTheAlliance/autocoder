@@ -1,4 +1,3 @@
-import sys
 from easycompletion import (
     openai_function_call,
     compose_prompt,
@@ -8,6 +7,7 @@ from autocoder.helpers.code import validate_file
 
 from autocoder.helpers.context import (
     backup_project,
+    collect_errors,
     collect_files,
     get_file_count,
     read_and_format_code,
@@ -20,14 +20,11 @@ from agentlogger import log
 
 from agentloop import stop
 
-reasoning_prompt = """
+reasoning_prompt = """This is my code:
 {{project_code_formatted}}
-
 This is my goal:
 {{goal}}
-
-Note: I have written this code to meet a client's stated goal.
-
+{{errors_formatted}}
 Your task: Evaluate the code and determine if it meets the goal, or what could be improved about it.
 - Please provide reasoning for why the code is valid and complete (or not) and respond with is_valid_and_complete=True
 - If it does not meet the goals, please provide explain why it does not, and what could be improved.
@@ -71,7 +68,7 @@ def step(context, loop_dict):
     """
     if context["running"] == False:
         return context
-    
+
     context = get_file_count(context)
 
     quiet = context.get("quiet")
@@ -94,6 +91,7 @@ def step(context, loop_dict):
     context = validate_files(context)
     context = run_tests(context)
     context = run_main(context)
+    context = collect_errors(context)
     context = read_and_format_code(context)
 
     # If we have an error, go immediately to the edit step
@@ -104,6 +102,9 @@ def step(context, loop_dict):
             type="error",
             log=should_log,
         )
+        context[
+            "reasoning"
+        ] = "main.py failed to run - I probably need to fix that before I can do anything else."
         return context
 
     # If any of the files failed to validate for any reason, go immediately to the edit step
@@ -121,6 +122,9 @@ def step(context, loop_dict):
                 type="error",
                 log=should_log,
             )
+            context[
+                "reasoning"
+            ] = "The project failed to validate. I need to fix the validation errors."
         return context
 
     if context["project_tested"] is not True:
@@ -140,17 +144,16 @@ def step(context, loop_dict):
                 type="error",
                 log=should_log,
             )
+            context[
+                "reasoning"
+            ] = "The project failed in testing. I need to fix the test errors."
         return context
 
     text = compose_prompt(reasoning_prompt, context)
     functions = compose_project_validation_function()
 
     # Handle the auto case
-    response = openai_function_call(
-        text=text,
-        functions=functions,
-        debug=debug
-    )
+    response = openai_function_call(text=text, functions=functions, debug=debug)
 
     # Add the action reasoning to the context object
     is_valid_and_complete = response["arguments"]["is_valid_and_complete"]

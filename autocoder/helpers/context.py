@@ -2,7 +2,6 @@ import subprocess
 from pathlib import Path
 import pkg_resources
 import sys
-import pkgutil
 
 from autocoder.helpers.files import (
     count_files,
@@ -159,6 +158,31 @@ def run_main(context):
     if result["success"] is False:
         context["main_error"] = result["error"]
     context["main_output"] = result["output"]
+    return context
+
+
+def collect_errors(context):
+    # get all errors from project_code
+    project_code = context["project_code"]
+    project_errors = []
+    for file_dict in project_code:
+        if file_dict.get("validation_success") is False:
+            project_errors.append(file_dict["validation_error"])
+        if file_dict.get("test_success") is False:
+            project_errors.append(file_dict["test_error"])
+    # add main_error
+    if context.get("main_success") is False:
+        project_errors.append(context["main_error"])
+    context["errors"] = project_errors
+
+    # format errors
+    error_str = ""
+    for error in project_errors:
+        error_str += f"{error}\n"
+    if error_str != "":
+        context["errors_formatted"] = "Errors:\n" + error_str
+    else:
+        context["errors_formatted"] = ""
     return context
 
 
