@@ -4,24 +4,6 @@ from importlib_metadata import distributions
 from agentlogger import log
 
 
-def get_imports(code):
-    # List installed packages
-    installed_packages = [d.metadata["name"] for d in distributions()]
-
-    tree = ast.parse(code)
-
-    import_statements = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            import_statements.extend([alias.name for alias in node.names])
-        elif isinstance(node, ast.ImportFrom):
-            if node.level == 0:  # Absolute import
-                import_statements.append(node.module)
-    # Check which import statements are in installed packages
-    import_packages = [imp for imp in import_statements if imp in installed_packages]
-    return import_packages
-
-
 def is_runnable(filename):
     try:
         result = subprocess.run(

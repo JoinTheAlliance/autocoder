@@ -1,7 +1,8 @@
 import subprocess
 from pathlib import Path
-
 import pkg_resources
+import sys
+import pkgutil
 
 from autocoder.helpers.files import (
     count_files,
@@ -169,6 +170,13 @@ def backup_project(context):
 
 
 def handle_packages(context):
+    # Get the set of standard library modules
+    std_module_set = set(sys.builtin_module_names)
+    # Get the set of all available Python modules
+    std_module_set.update(
+        set((name for loader, name, ispkg in pkgutil.walk_packages()))
+    )
+
     packages = context.get("packages", [])
     project_dir = context["project_dir"]
     # check if requirements.txt exists, if it does read it
@@ -176,8 +184,8 @@ def handle_packages(context):
     if file_exists(f"{project_dir}/requirements.txt"):
         with open(f"{project_dir}/requirements.txt", "r") as f:
             old_packages = f.read().split("\n")
-    # remove empty strings
-    old_packages = [p for p in old_packages if p != "" and p != "\n"]
+    # remove empty strings and version numbers
+    old_packages = [p.split("==")[0] for p in old_packages if p != "" and p != "\n"]
     # join packages and old_packages
     packages = list(set(packages + old_packages))
 
@@ -194,26 +202,32 @@ def handle_packages(context):
 
     # Loop through the packages
     for package in packages:
-        # Check if package is installed
-        if package not in installed:
+        # Check if package is installed and it is not a built-in package
+        if package not in installed and package not in std_module_set:
             # Install missing package
             try:
-                result = subprocess.run(["python", "-m", "pip", "install", package], 
-                                        stdout=subprocess.PIPE, 
-                                        stderr=subprocess.PIPE,
-                                        text=True,
-                                        check=True)
+                result = subprocess.run(
+                    ["python", "-m", "pip", "install", package],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True,
+                )
 
             except subprocess.CalledProcessError as e:
                 # Check if the error message contains the expected error
-                if 'Could not find a version that satisfies the requirement' in e.stderr:
+                if (
+                    "Could not find a version that satisfies the requirement"
+                    in e.stderr
+                ):
                     # Extract the package name from the error message
-                    error_package = e.stderr.split(' ')[10]
+                    error_package = e.stderr.split(" ")[10]
                     packages.remove(error_package)
 
     # for each package in packages, add to project_dir/requirements.txt
     with open(f"{project_dir}/requirements.txt", "w") as f:
-        f.write("\n".join(packages))
+        # Only add to requirements.txt if it's not a built-in package
+        f.write("\n".join([p for p in packages if p not in std_module_set]))
 
     context["packages"] = []
     return context

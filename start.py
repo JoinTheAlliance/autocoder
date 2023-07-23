@@ -11,8 +11,6 @@ from termcolor import colored
 from dotenv import load_dotenv
 load_dotenv()  # take environment variables from .env.
 
-from autocoder.main import main as autocoder
-
 style = Style.from_dict(
     {
         "dialog": "bg:#88ff88",
@@ -94,6 +92,7 @@ def save_project_data(name, project_data):
 
 
 def run(project_data):
+    from autocoder.main import main as autocoder
     autocoder(project_data)
     sys.exit(0)
 
@@ -151,14 +150,6 @@ def new_or_edit_project(is_editing=False):
 
 
 def main():
-    if os.path.exists(".env"):
-        # read from it if it does
-        with open(".env", "r") as f:
-            for line in f.readlines():
-                key, value = line.strip().split("=", 1)
-                os.environ[key] = value
-                break
-            
     project_path = None
 
     if "--project" in sys.argv:

@@ -5,7 +5,6 @@ from autocoder.helpers.code import (
     file_exists,
     has_functions_called,
     is_runnable,
-    get_imports,
     count_lines,
     validate_file,
     validate_code,
@@ -65,17 +64,6 @@ def test_file_exists_true():
 
 def test_file_exists_false():
     assert file_exists("/path/to/nonexistent/file") == False
-
-
-def test_get_imports():
-    code = """import numpy
-import agentmemory
-import sys
-import pytest
-from os import path
-from subprocess import call
-"""
-    assert set(get_imports(code)) == set(["agentmemory", "numpy", "pytest"])
 
 
 def test_count_lines_with_comments_and_empty_lines():
