@@ -1,9 +1,11 @@
 import os
 import pytest
+from autocoder.helpers.files import get_full_path
 
 from autocoder.steps.act import (
     create_handler,
     create_new_file_handler,
+    delete_file_handler,
     insert_code_handler,
     remove_code_handler,
     replace_code_handler,
@@ -83,9 +85,8 @@ def test_insert_code_handler():
         write_arguments, context
     )  # First, create a file to insert into
 
-
     insert_code_handler(arguments, context)
-    
+
     with open("test_dir/main.py", "r") as f:
         text = f.read()
         lines = text.split("\n")
@@ -165,4 +166,38 @@ def test_create_new_file_handler():
 
     assert os.path.isfile("test_dir/new_file.py")
     assert os.path.isfile("test_dir/new_file_test.py")
+    teardown_function()
+
+
+def test_delete_file_handler():
+    setup_function()
+
+    # Add a file that will be deleted
+    with open(os.path.join('test_dir', "file_to_delete.py"), "w") as f:
+        f.write('print("This file will be deleted!")')
+
+    # Add the corresponding test file
+    with open(os.path.join('test_dir', "file_to_delete_test.py"), "w") as f:
+        f.write("def test_file_to_delete(): assert True")
+
+    context = {
+        "project_dir": 'test_dir',
+        "quiet": False,
+        "debug": False,
+    }
+
+    arguments = {
+        "reasoning": "Testing delete function",
+        "filepath": "file_to_delete.py",
+    }
+
+    context = delete_file_handler(arguments, context)
+
+    file_path = get_full_path("file_to_delete.py", context["project_dir"])
+    test_file_path = get_full_path("file_to_delete_test.py", context["project_dir"])
+
+    # Ensure the files were deleted
+    assert not os.path.exists(file_path), f"{file_path} was not deleted"
+    assert not os.path.exists(test_file_path), f"{test_file_path} was not deleted"
+
     teardown_function()

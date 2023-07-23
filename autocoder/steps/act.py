@@ -271,80 +271,116 @@ def create_new_file_handler(arguments, context):
     return context
 
 
+def delete_file_handler(arguments, context):
+    should_log = not context.get("quiet") or context.get("debug")
+    reasoning = arguments["reasoning"]
+    filepath = arguments["filepath"]
+
+    log(
+        f"Deleting file {filepath}" + f"\n\nReasoning:\n{reasoning}",
+        title="action",
+        type="delete",
+        log=should_log,
+    )
+
+    # Delete the file at filepath
+    file_path = get_full_path(filepath, context["project_dir"])
+    # check if the file exists
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        # if file_path didn't contain _test.py, then delete the _test.py file
+        if "_test.py" not in file_path:
+            test_path = get_full_path(
+                f"{os.path.splitext(filepath)[0]}_test.py", context["project_dir"]
+            )
+            if os.path.exists(test_path):
+                os.remove(test_path)
+    else:
+        log(
+            f"File {filepath} does not exist",
+            title="action",
+            type="warning",
+            log=should_log,
+        )
+        context["error"] = f"File {filepath} does not exist"
+
+    return context
+
+
 def get_actions():
     return [
-        # {
-        #     "function": compose_function(
-        #         name="insert_code",
-        #         description="Insert a snippet of code before a line. This is useful for inserting a function, for example, although if the functio needs to be called, write_complete_module is probably a better choice.",
-        #         properties={
-        #             "reasoning": {
-        #                 "type": "string",
-        #                 "description": "What does this code do? Why are you inserting it, and into which file? Please explain as though this is a code review on a pull request.",
-        #             },
-        #             "filepath": {
-        #                 "type": "string",
-        #                 "description": "The relative path of the file to insert code into, including .py. Must be an existing file from the provided project directory.",
-        #             },
-        #             "code": {
-        #                 "type": "string",
-        #                 "description": "The snippet of code to insert.",
-        #             },
-        #             "line_number": {
-        #                 "type": "number",
-        #                 "description": "The line number to insert the code before.",
-        #             },
-        #             "packages": {
-        #                 "type": "array",
-        #                 "description": "A list of packages to install, derived from the imports of the code.",
-        #                 "items": {"type": "string"},
-        #             },
-        #         },
-        #         required_properties=["reasoning", "filepath", "code", "line_number"],
-        #     ),
-        #     "handler": insert_code_handler,
-        # },
-        # {
-        #     "function": compose_function(
-        #         name="replace_code",
-        #         description="Replace lines in the original code with a new snippet of code.",
-        #         properties={
-        #             "reasoning": {
-        #                 "type": "string",
-        #                 "description": "Which code are you replacing? What does the new code do? Why are you replacing it?",
-        #             },
-        #             "filepath": {
-        #                 "type": "string",
-        #                 "description": "The relative path of the file to insert code into, including .py.",
-        #             },
-        #             "code": {
-        #                 "type": "string",
-        #                 "description": "The snippet of code to replace the existing code with.",
-        #             },
-        #             "start_line": {
-        #                 "type": "number",
-        #                 "description": "The start line number of the file where code is being replaced.",
-        #             },
-        #             "end_line": {
-        #                 "type": "number",
-        #                 "description": "The end line number of the file where code is being replaced.",
-        #             },
-        #             "packages": {
-        #                 "type": "array",
-        #                 "description": "A list of packages to install, derived from the imports of the code.",
-        #                 "items": {"type": "string"},
-        #             },
-        #         },
-        #         required_properties=[
-        #             "reasoning",
-        #             "filepath",
-        #             "code",
-        #             "start_line",
-        #             "end_line",
-        #         ],
-        #     ),
-        #     "handler": replace_code_handler,
-        # },
+        {
+            "function": compose_function(
+                name="insert_code",
+                description="Insert a snippet of code before a line. This is useful for inserting a function, for example, although if the functio needs to be called, write_complete_module is probably a better choice.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "What does this code do? Why are you inserting it, and into which file? Please explain as though this is a code review on a pull request.",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "The relative path of the file to insert code into, including .py. Must be an existing file from the provided project directory.",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The snippet of code to insert.",
+                    },
+                    "line_number": {
+                        "type": "number",
+                        "description": "The line number to insert the code before.",
+                    },
+                    "packages": {
+                        "type": "array",
+                        "description": "A list of packages to install, derived from the imports of the code.",
+                        "items": {"type": "string"},
+                    },
+                },
+                required_properties=["reasoning", "filepath", "code", "line_number"],
+            ),
+            "handler": insert_code_handler,
+        },
+        {
+            "function": compose_function(
+                name="replace_code",
+                description="Replace lines in the original code with a new snippet of code.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Which code are you replacing? What does the new code do? Why are you replacing it?",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "The relative path of the file to insert code into, including .py.",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The snippet of code to replace the existing code with.",
+                    },
+                    "start_line": {
+                        "type": "number",
+                        "description": "The start line number of the file where code is being replaced.",
+                    },
+                    "end_line": {
+                        "type": "number",
+                        "description": "The end line number of the file where code is being replaced.",
+                    },
+                    "packages": {
+                        "type": "array",
+                        "description": "A list of packages to install, derived from the imports of the code.",
+                        "items": {"type": "string"},
+                    },
+                },
+                required_properties=[
+                    "reasoning",
+                    "filepath",
+                    "code",
+                    "start_line",
+                    "end_line",
+                ],
+            ),
+            "handler": replace_code_handler,
+        },
         {
             "function": compose_function(
                 name="write_complete_module",
@@ -372,68 +408,86 @@ def get_actions():
             ),
             "handler": write_complete_script_handler,
         },
-        # {
-        #     "function": compose_function(
-        #         name="remove_code",
-        #         description="Removes a range of lines from the code. Requires a start and end line number.",
-        #         properties={
-        #             "reasoning": {
-        #                 "type": "string",
-        #                 "description": "Why are you removing this code?",
-        #             },
-        #             "filepath": {
-        #                 "type": "string",
-        #                 "description": "The relative path of the file to remove code from, including .py. Must be an existing file from the provided project directory.",
-        #             },
-        #             "start_line": {
-        #                 "type": "number",
-        #                 "description": "The start line number of the code to remove.",
-        #             },
-        #             "end_line": {
-        #                 "type": "number",
-        #                 "description": "The end line number of the code to remove.",
-        #             },
-        #         },
-        #         required_properties=["reasoning", "start_line", "end_line"],
-        #     ),
-        #     "handler": remove_code_handler,
-        # },
-        # {
-        #     "function": compose_function(
-        #         name="create_new_file",
-        #         description="Create a Python file",
-        #         properties={
-        #             "reasoning": {
-        #                 "type": "string",
-        #                 "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
-        #             },
-        #             "filepath": {
-        #                 "type": "string",
-        #                 "description": "The relative path of the file to create, starting with './' and ending with '.py'. Should be relative to the project directory",
-        #             },
-        #             "code": {
-        #                 "type": "string",
-        #                 "description": "The full code for the module names <filename>, including all imports and code",
-        #             },
-        #             "packages": {
-        #                 "type": "array",
-        #                 "description": "A list of packages to install, derived from the imports of the code.",
-        #                 "items": {"type": "string"},
-        #             },
-        #             "test": {
-        #                 "type": "string",
-        #                 "description": "The full code for <filename>_test.py, which is a set of functional pytest-compatible tests for the module code, including all imports and code.",
-        #             },
-        #         },
-        #         required_properties=[
-        #             "reasoning",
-        #             "filepath",
-        #             "code",
-        #             "test",
-        #         ],
-        #     ),
-        #     "handler": create_new_file_handler,
-        # },
+        {
+            "function": compose_function(
+                name="remove_code",
+                description="Removes a range of lines from the code. Requires a start and end line number.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Why are you removing this code?",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "The relative path of the file to remove code from, including .py. Must be an existing file from the provided project directory.",
+                    },
+                    "start_line": {
+                        "type": "number",
+                        "description": "The start line number of the code to remove.",
+                    },
+                    "end_line": {
+                        "type": "number",
+                        "description": "The end line number of the code to remove.",
+                    },
+                },
+                required_properties=["reasoning", "start_line", "end_line"],
+            ),
+            "handler": remove_code_handler,
+        },
+        {
+            "function": compose_function(
+                name="create_new_file",
+                description="Create a Python file",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "The relative path of the file to create, starting with './' and ending with '.py'. Should be relative to the project directory",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The full code for the module names <filename>, including all imports and code",
+                    },
+                    "packages": {
+                        "type": "array",
+                        "description": "A list of packages to install, derived from the imports of the code.",
+                        "items": {"type": "string"},
+                    },
+                    "test": {
+                        "type": "string",
+                        "description": "The full code for <filename>_test.py, which is a set of functional pytest-compatible tests for the module code, including all imports and code.",
+                    },
+                },
+                required_properties=[
+                    "reasoning",
+                    "filepath",
+                    "code",
+                    "test",
+                ],
+            ),
+            "handler": create_new_file_handler,
+        },
+        {
+            "function": compose_function(
+                name="delete_file",
+                description="Delete a file that is unnecessary or contains duplicated functionality",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Why are we deleting this file?",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "The relative path of the file to delete.",
+                    },
+                },
+                required_properties=["reasoning", "filepath"],
+            ),
+            "handler": delete_file_handler,
+        },
     ]
 
 
