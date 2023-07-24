@@ -2,6 +2,7 @@ from easycompletion import (
     openai_function_call,
     compose_prompt,
     compose_function,
+    trim_prompt,
 )
 from autocoder.helpers.code import validate_file
 
@@ -21,12 +22,16 @@ from agentlogger import log
 from agentloop import stop
 
 reasoning_prompt = """\
+The above is external context. Below is the internal context.
+
 Notes:
 - There are four actions: edit_file, create_file, delete_file and finish_project
-- If you want to edit a file, respond with action_name="edit_file" and provide the path to the file you want to edit
-- If you want to create a file, respond with action_name="create_file" and provide the path to the file you want to create
-- If you want to delete a file, respond with action_name="delete_file" and provide the path to the file you want to delete
+- If you want to edit a file, respond with action_name="edit_file" and provide a filename
+- If you want to create a file, respond with action_name="create_file" and provide a filename
+- If you want to delete a file, respond with action_name="delete_file" and provide a filename to delete
 - If the project is complete and validated, respond with action_name="finish_project"
+- Only create a new file if you absolutely need to, try to edit the files you already have as much as possible
+- If you have two or more files that do the same thing, delete one
 
 This is my code:
 {{project_code_formatted}}
@@ -68,9 +73,14 @@ def compose_project_validation_function():
             "filename": {
                 "type": "string",
                 "description": "The path to the file to edit, create or delete.",
-            }
+            },
         },
-        required_properties=["reasoning", "is_valid_and_complete", "action_name", "filename"],
+        required_properties=[
+            "reasoning",
+            "is_valid_and_complete",
+            "action_name",
+            "filename",
+        ],
     )
 
 
@@ -124,7 +134,7 @@ def step(context, loop_dict):
         context_str += f"{key}:\n\t{value}\n"
 
     log(
-        "Context"+"\n"+context_str,
+        "Context" + "\n" + context_str,
         title="context",
         type="context",
         color="yellow",
@@ -156,7 +166,6 @@ def step(context, loop_dict):
                 log=should_log,
             )
 
-
     if context["project_tested"] is False:
         test_errors = ""
         for file_dict in context["project_code"]:
@@ -175,19 +184,26 @@ def step(context, loop_dict):
                 log=should_log,
             )
 
-
     text = compose_prompt(reasoning_prompt, context)
     functions = compose_project_validation_function()
 
+    text = trim_prompt(text, 10000, preserve_top=False)
     # Handle the auto case
     response = openai_function_call(
-        text=text, functions=functions, debug=debug, model=context.get("model", "gpt-3.5-turbo-0613")
+        text=text,
+        functions=functions,
+        debug=debug,
+        model=context.get("model", "gpt-3.5-turbo-0613"),
     )
 
     # Add the action reasoning to the context object
     is_valid_and_complete = response["arguments"]["is_valid_and_complete"]
 
-    if is_valid_and_complete is True:
+    if (
+        context["project_tested"] is True
+        and context["project_validated"] is True
+        and is_valid_and_complete is True
+    ):
         log(
             "Project is valid and complete. Good luck!",
             title="validation",
@@ -197,16 +213,18 @@ def step(context, loop_dict):
         stop(loop_dict)
         context["running"] = False
 
-    else:
-        log(
-            response["arguments"]["reasoning"],
-            title="validation",
-            type="reasoning",
-            log=should_log,
-        )
-
     header = "You provided this reasoning for your next action:\n"
     context["reasoning"] = header + response["arguments"]["reasoning"]
+    if response["arguments"]["is_valid_and_complete"] is True:
+        if context["project_tested"] is False:
+            context["reasoning"] += (
+                "\n\nThe project has failed testing and still needs some work before it is finished."
+            )
+        if context["project_validated"] is False:
+            context["reasoning"] += (
+                "\n\nThe project has failed validation and still needs some work before it is finished."
+            )
+
     context["is_valid_and_complete"] = response["arguments"]["is_valid_and_complete"]
     context["action_name"] = response["arguments"]["action_name"]
     context["action_filename"] = response["arguments"]["filename"]

@@ -52,7 +52,7 @@ def test_write_complete_script_handler():
     arguments = {
         "reasoning": "Testing write complete script handler",
         "code": "print('Hello, World!')",
-        "filepath": "main.py",
+        "filename": "main.py",
     }
     write_complete_script_handler(arguments, context)
 
@@ -73,13 +73,13 @@ def test_insert_code_handler():
         "reasoning": "Testing insert code handler",
         "code": "print('Inserted line')",
         "start_line": 1,
-        "filepath": "main.py",
+        "filename": "main.py",
     }
 
     write_arguments = {
         "reasoning": "Testing write complete script handler",
         "code": "print('Hello, World!')\nprint('An inserted line should come before this!')",
-        "filepath": "main.py",
+        "filename": "main.py",
     }
     write_complete_script_handler(
         write_arguments, context
@@ -105,7 +105,7 @@ def test_replace_code_handler():
         "code": "print('New line')\nprint('Second new line')",
         "start_line": 1,
         "end_line": 2,
-        "filepath": "main.py",
+        "filename": "main.py",
     }
 
     # write test_dir/main.py
@@ -130,12 +130,12 @@ def test_remove_code_handler():
         "reasoning": "Testing remove code handler",
         "start_line": 1,
         "end_line": 1,
-        "filepath": "main.py",
+        "filename": "main.py",
     }
     write_arguments = {
         "reasoning": "Testing write complete script handler",
         "code": "print('Hello, World!')",
-        "filepath": "main.py",
+        "filename": "main.py",
     }
     write_complete_script_handler(
         write_arguments, context
@@ -155,7 +155,7 @@ def test_create_new_file_handler():
     context = {"project_dir": "test_dir"}
     arguments = {
         "reasoning": "Testing create new file handler",
-        "filepath": "new_file.py",
+        "filename": "new_file.py",
         "code": "print('Hello, New File!')",
         "test": "def test_new_file(): assert True",
     }
@@ -181,7 +181,7 @@ def test_delete_file_handler():
 
     arguments = {
         "reasoning": "Testing delete function",
-        "filepath": "file_to_delete.py",
+        "filename": "file_to_delete.py",
     }
 
     context = delete_file_handler(arguments, context)

@@ -49,6 +49,10 @@ def get_project_details(project_data=None, is_editing=False):
             "key": "goal",
             "question": "What do you want your script to do? Please be as detailed as possible.",
         },
+        {
+            "key": "additional",
+            "question": "Any additional documentation or information that might be helpful?",
+        },
     ]
 
     project_data = project_data or {}

@@ -108,7 +108,6 @@ def validate_files(context):
 
 
 def run_tests(context):
-    print('***** RUNNING TESTS')
     # get python files which don't contain test in their name
 
     # if not, error
@@ -130,11 +129,9 @@ def run_tests(context):
         else:
             project_code_notests.append(file_dict)
 
-    print('****** TESTS')
     for file_dict in project_code_tests:
         file_path = file_dict["absolute_path"]
         test = run_code_tests(file_path)
-        print(test)
         if test["success"] is False:
             project_tested = False
         file_dict["test_success"] = test["success"]

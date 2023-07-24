@@ -17,20 +17,20 @@ def count_files(dir):
     return count
 
 
-def get_full_path(filepath, project_dir):
+def get_full_path(filename, project_dir):
     """
-    Takes a filepath and a project directory, and constructs a full path based on the inputs.
+    Takes a filename and a project directory, and constructs a full path based on the inputs.
     Returns the absolute path to the file.
 
-    :param filepath: The input filepath, which can include directories and a filename.
-    :type filepath: str
+    :param filename: The input filename, which can include directories and a filename.
+    :type filename: str
     :param project_dir: The directory where the project files are located.
     :type project_dir: str
     :return: The absolute path to the file, given the filename.
     :rtype: str
     """
-    filename = os.path.basename(filepath)
-    directory_path = os.path.dirname(filepath)
+    filename = os.path.basename(filename)
+    directory_path = os.path.dirname(filename)
 
     if not directory_path:
         directory_path = "."

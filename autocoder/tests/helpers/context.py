@@ -135,10 +135,10 @@ def test_run_tests():
 
 def test_get_full_path():
     project_dir = "./example/project"
-    filepath = "subdir/file.txt"
+    filename = "subdir/file.txt"
     expected_full_path = os.getcwd() + "/example/project/subdir/file.txt"
 
-    assert get_full_path(filepath, project_dir) == expected_full_path
+    assert get_full_path(filename, project_dir) == expected_full_path
     # remove ./example and everything inside
     shutil.rmtree("./example")
 
