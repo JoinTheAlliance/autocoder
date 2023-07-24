@@ -95,7 +95,7 @@ def step(context, loop_dict):
     context = read_and_format_code(context)
 
     # If we have an error, go immediately to the edit step
-    if context.get("main_success", None) is False:
+    if context.get("main_success") is False and context.get("main_error") is not None:
         log(
             f"main.py failed to run\nError:\n{context.get('main_error', 'unknown')}",
             title="main.py",

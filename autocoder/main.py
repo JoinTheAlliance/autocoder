@@ -50,6 +50,9 @@ def main(project_data):
         print_header(text="autocoder", color="yellow", font="slant")
         log("Initializing...", title="autocoder", type="system", panel=False)
 
+
+    project_data["project_dir"] = f"./project_data/{project_data['project_name']}"
+
     # check if project_dir exists and create it if it doesn't
     if not os.path.exists(project_data["project_dir"]):
         os.makedirs(project_data["project_dir"])

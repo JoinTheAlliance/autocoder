@@ -1,5 +1,7 @@
+import os
 import subprocess
 import ast
+import sys
 import black
 from importlib_metadata import distributions
 from agentlogger import log
@@ -156,7 +158,6 @@ def save_code(code, filename):
         code = format_code(code)
     except Exception as e:
         log(f"Code could not be formatted: {e}", title="save_code", type="warning")
-        pass
     with open(filename, "w") as f:
         f.write(code)
 
@@ -202,3 +203,67 @@ def run_code_tests(script_path):
         "output": result.stdout,
         "error": result.stderr,
     }
+
+def extract_imports(code, directory):
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        log("Syntax error", title="extract_imports", type="warning", )
+        return set()
+    
+    all_imports = []
+
+    # List of built-in modules to be ignored
+    builtin_modules = list(sys.builtin_module_names) + common_std_libs
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                package = alias.name.split(".")[0]  # only keep top-level package
+                if package not in builtin_modules and not os.path.exists(
+                    os.path.join(directory, f"{package}.py")
+                ):
+                    all_imports.append(package)
+        elif isinstance(node, ast.ImportFrom):
+            if node.level > 0:  # Skip relative imports
+                continue
+            if node.module is not None:
+                package = node.module.split(".")[0]  # only keep top-level package
+                if package not in builtin_modules and not os.path.exists(
+                    os.path.join(directory, f"{package}.py")
+                ):
+                    all_imports.append(package)
+    return set(all_imports)
+
+common_std_libs = [
+    "os",
+    "sys",
+    "math",
+    "datetime",
+    "json",
+    "random",
+    "re",
+    "collections",
+    "itertools",
+    "functools",
+    "pickle",
+    "subprocess",
+    "multiprocessing",
+    "threading",
+    "logging",
+    "argparse",
+    "shutil",
+    "glob",
+    "time",
+    "pathlib",
+    "socket",
+    "asyncio",
+    "csv",
+    "urllib",
+    "heapq",
+    "hashlib",
+    "base64",
+    "timeit",
+    "contextlib",
+    "io"
+]

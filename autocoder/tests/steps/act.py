@@ -33,7 +33,6 @@ def test_create_handler():
     arguments = {
         "reasoning": "Testing create handler",
         "code": "print('Hello, World!')",
-        "packages": ["numpy", "pandas"],
         "test": "def test_main(): assert True",
     }
     create_handler(arguments, context)
@@ -50,7 +49,6 @@ def test_write_complete_script_handler():
         "reasoning": "Testing write complete script handler",
         "code": "print('Hello, World!')",
         "filepath": "main.py",
-        "packages": ["numpy", "pandas"],
     }
     write_complete_script_handler(arguments, context)
 
@@ -72,14 +70,12 @@ def test_insert_code_handler():
         "code": "print('Inserted line')",
         "line_number": 1,
         "filepath": "main.py",
-        "packages": [],
     }
 
     write_arguments = {
         "reasoning": "Testing write complete script handler",
         "code": "print('Hello, World!')\nprint('An inserted line should come before this!')",
         "filepath": "main.py",
-        "packages": [],
     }
     write_complete_script_handler(
         write_arguments, context
@@ -106,7 +102,6 @@ def test_replace_code_handler():
         "start_line": 1,
         "end_line": 2,
         "filepath": "main.py",
-        "packages": ["numpy", "pandas"],
     }
 
     # write test_dir/main.py
@@ -137,7 +132,6 @@ def test_remove_code_handler():
         "reasoning": "Testing write complete script handler",
         "code": "print('Hello, World!')",
         "filepath": "main.py",
-        "packages": ["numpy", "pandas"],
     }
     write_complete_script_handler(
         write_arguments, context
@@ -159,7 +153,6 @@ def test_create_new_file_handler():
         "reasoning": "Testing create new file handler",
         "filepath": "new_file.py",
         "code": "print('Hello, New File!')",
-        "packages": ["numpy", "pandas"],
         "test": "def test_new_file(): assert True",
     }
     create_new_file_handler(arguments, context)
@@ -173,15 +166,15 @@ def test_delete_file_handler():
     setup_function()
 
     # Add a file that will be deleted
-    with open(os.path.join('test_dir', "file_to_delete.py"), "w") as f:
+    with open(os.path.join("test_dir", "file_to_delete.py"), "w") as f:
         f.write('print("This file will be deleted!")')
 
     # Add the corresponding test file
-    with open(os.path.join('test_dir', "file_to_delete_test.py"), "w") as f:
+    with open(os.path.join("test_dir", "file_to_delete_test.py"), "w") as f:
         f.write("def test_file_to_delete(): assert True")
 
     context = {
-        "project_dir": 'test_dir',
+        "project_dir": "test_dir",
         "quiet": False,
         "debug": False,
     }

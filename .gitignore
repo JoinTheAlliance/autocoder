@@ -11,3 +11,6 @@ project_data/
 memory/
 projects/
 .project_cache/
+.pytest_cache/
+.preferences
+*.mid

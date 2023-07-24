@@ -90,7 +90,7 @@ def save_project_data(name, project_data):
 
 def run(project_data):
     # read and parse _options.json
-    options_path = "./project_data/_options.json"
+    options_path = ".preferences"
     if os.path.exists(options_path):
         with open(options_path, "r") as f:
             options = json.load(f)
@@ -228,7 +228,7 @@ def main():
 
 def handle_options_menu():
     # Load existing options or set defaults
-    options_path = "./project_data/_options.json"
+    options_path = ".preferences"
     default_options = {
         "stepped": False,
         "logging": "Normal",

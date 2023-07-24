@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 import pkg_resources
 import sys
+import ast
 
 from autocoder.helpers.files import (
     count_files,
@@ -10,7 +11,7 @@ from autocoder.helpers.files import (
     get_python_files,
     zip_python_files,
 )
-from autocoder.helpers.code import file_exists, run_code, run_code_tests, validate_file
+from autocoder.helpers.code import extract_imports, file_exists, run_code, run_code_tests, validate_file
 from agentlogger import log
 
 
@@ -54,8 +55,8 @@ def read_and_format_code(context):
         if test_success is False:
             project_files_str += "Pytest Error: {}\n".format(test_error)
         project_files_str += "\nLine # ------------------------------ CODE -------------------------------------\n"
-        for i, line in enumerate(content):
-            project_files_str += "[{}] {}".format(i + 1, line)
+        for i, line in enumerate(content.split('\n')):
+            project_files_str += "[{}] {}\n".format(i + 1, line)
         project_files_str += "\n================================================================================\n"
 
     context["project_code_formatted"] = project_files_str
@@ -77,15 +78,15 @@ def collect_files(context):
 
     for file_path in context["python_files"]:
         with open(file_path, "r") as file:
-            content = file.readlines()
-            rel_path = Path(file_path).relative_to(project_dir)
+            content = file.read()
+        rel_path = Path(file_path).relative_to(project_dir)
 
-            file_dict = {
-                "relative_path": str(rel_path),
-                "absolute_path": file_path,
-                "content": content,
-            }
-            project_code.append(file_dict)
+        file_dict = {
+            "relative_path": str(rel_path),
+            "absolute_path": file_path,
+            "content": content,
+        }
+        project_code.append(file_dict)
     context["project_code"] = project_code
 
     return context
@@ -147,6 +148,7 @@ def run_main(context):
     main_file = None
     for file_dict in project_code:
         if "main.py" in file_dict["relative_path"]:
+            file_dict["test_success"] = None
             main_file = file_dict
 
     if main_file is None:
@@ -157,7 +159,13 @@ def run_main(context):
     context["main_success"] = result["success"]
     if result["success"] is False:
         context["main_error"] = result["error"]
+    else:
+        context["main_error"] = None
     context["main_output"] = result["output"]
+
+    print('****** RUNNING MAIN')
+    print(result)
+
     return context
 
 
@@ -167,12 +175,12 @@ def collect_errors(context):
     project_errors = []
     for file_dict in project_code:
         if file_dict.get("validation_success") is False:
-            project_errors.append(file_dict["validation_error"])
+            project_errors.append(str(file_dict["relative_path"]) + ": " + str(file_dict["validation_error"]))
         if file_dict.get("test_success") is False:
-            project_errors.append(file_dict["test_error"])
+            project_errors.append(str(file_dict["relative_path"]) + ": " + str(file_dict["test_error"]))
     # add main_error
     if context.get("main_success") is False:
-        project_errors.append(context["main_error"])
+        project_errors.append(str(context["main_error"]))
     context["errors"] = project_errors
 
     # format errors
@@ -188,17 +196,33 @@ def collect_errors(context):
 
 def backup_project(context):
     project_dir = context["project_dir"]
-    project_name = context["name"]
+    project_name = context["project_name"]
     context["backup"] = zip_python_files(project_dir, project_name)
     return context
 
 
 def handle_packages(context):
+    debug = context.get("debug", False)
+    should_log = not context.get("quiet") or context.get("debug")
+    
     # Get the set of standard library modules
     std_module_set = set(sys.builtin_module_names)
 
-    packages = context.get("packages", [])
+    packages = []
+    
+    # get the content from every entry in project_code
+    project_code = context["project_code"]
     project_dir = context["project_dir"]
+
+    for file_dict in project_code:
+        try:
+            ast.parse(file_dict["content"])
+        except SyntaxError:
+            log("Couldn't parse file to extract imports", title="extract_imports", type="warning", log=debug)
+        imports = list(extract_imports(file_dict["content"], file_dict["absolute_path"]))
+        if len(imports) > 0:
+            packages = list(packages) + imports
+
     # check if requirements.txt exists, if it does read it
     old_packages = []
     if file_exists(f"{project_dir}/requirements.txt"):
@@ -209,17 +233,9 @@ def handle_packages(context):
     # join packages and old_packages
     packages = list(set(packages + old_packages))
 
-    should_log = not context.get("quiet") or context.get("debug")
-    if packages is not None and len(packages) > 0:
-        log(
-            f"Installing packages: {packages}",
-            title="packages",
-            type="system",
-            log=should_log,
-        )
-
     # Get a list of currently installed packages
     installed = {pkg.key for pkg in pkg_resources.working_set}
+    installed_packages = []
 
     # Loop through the packages
     for package in packages:
@@ -234,6 +250,7 @@ def handle_packages(context):
                     text=True,
                     check=True,
                 )
+                installed_packages.append(package)
 
             except subprocess.CalledProcessError as e:
                 # Check if the error message contains the expected error
@@ -245,10 +262,17 @@ def handle_packages(context):
                     error_package = e.stderr.split(" ")[10]
                     packages.remove(error_package)
 
+    if len(installed_packages) > 0:
+        log(
+            f"Installing packages: {packages}",
+            title="packages",
+            type="system",
+            log=should_log,
+        )
+
     # for each package in packages, add to project_dir/requirements.txt
     with open(f"{project_dir}/requirements.txt", "w") as f:
         # Only add to requirements.txt if it's not a built-in package
         f.write("\n".join([p for p in packages if p not in std_module_set]))
 
-    context["packages"] = []
     return context

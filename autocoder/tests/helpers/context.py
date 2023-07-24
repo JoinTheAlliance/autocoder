@@ -1,6 +1,7 @@
 import os
 import shutil
 from pathlib import Path
+from autocoder.helpers.code import extract_imports
 
 from autocoder.helpers.context import (
     get_file_count,
@@ -104,6 +105,7 @@ def test_backup_project():
 
     teardown_function()
 
+
 def test_validate_files():
     setup_function()
 
@@ -116,6 +118,7 @@ def test_validate_files():
     assert context["project_validated"] is False, "project_validated should be False"
 
     teardown_function()
+
 
 def test_run_tests():
     setup_function()
@@ -131,9 +134,25 @@ def test_run_tests():
 
 
 def test_get_full_path():
-    # TODO: does't work, needs to be tested with a real project?
     project_dir = "./example/project"
     filepath = "subdir/file.txt"
     expected_full_path = os.getcwd() + "/example/project/subdir/file.txt"
 
     assert get_full_path(filepath, project_dir) == expected_full_path
+
+
+def test_extract_imports():
+    test_cases = [
+        # Here you can add more test cases
+        (
+            "from langchain.llms import OpenAI\nimport langchain.chat_models\nimport numpy as np\nfrom pandas import DataFrame\nimport os\n",
+            ["langchain", "numpy", "pandas"],
+        ),
+        ("import start\n", []),
+    ]
+
+    for code, expected_output in test_cases:
+        print(extract_imports(code, "."))
+        print("expected")
+        print(set(expected_output))
+        assert set(extract_imports(code, ".")) == set(expected_output)

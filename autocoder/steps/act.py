@@ -8,8 +8,12 @@ from autocoder.helpers.files import get_full_path
 from agentlogger import log
 
 create_prompt = """Task: Create a Python module that meets the stated goals, along with a set of tests for that module.
+
+This is my project goal:
+{{goal}}
+
 You should include the following details
-- Plan: Think about the best approach and write out a reasoning. Explain your reasoning.
+- Reasoning: Think about the best approach and explain your reasoning.
 - Code: The full code for main.py, including all imports and code.
     - There should be a main function which is called if __name__ == '__main__' (which should be located at the bottom of the script)
     - Use a functional style, with no global variables or classes unless necessary
@@ -18,18 +22,17 @@ You should include the following details
 - Test: The code for main_test.py, including all imports and functions. Tests should use a functional style with the assert keyword and run with pytest.
     - All tests should be in their own functions and have setup and teardown so that they are isolated from each other.
     - There should be multiple tests for each function, including tests for edge cases, different argument cases and failure cases.
-This is my project goal:
-{{goal}}"""
+- Code MUST include newlines and tabs, and should be formatted with black."""
 
 edit_prompt = """{{available_actions}}
 Assistant Notes:
-- Please choose one of the available functions to alter one of the files.
-- Create a new file if and only if it is necessary to meet the stated goals.
-- Use a functional style for code and tests.
-- Each action function can only do one thing, so if you need to do multiple things, you should just rewrite the entire module script
-- Do not include line numbers [#] at the beginning of the lines in your response.
-- Add comments to your code, explaining anything that might not be obvious to someone reading the code.
+- Use a functional style for code and tests
+- Do not include line numbers [#] at the beginning of the lines in your response. DO include tabs at the beginning of lines as needed
+- Add comments to your code, explaining anything that might not be obvious to someone reading the code
 - The project will only pass validation if main.py contains a main function which is called if __name__ == '__main__' (which should be located at the bottom of the script)
+- Include tabs in all code responses, especially include tabs at the beginning of a replace or insert
+- I should replace broken code. If my code is really broken, I should write the code again in its entirety
+- Remove any dead code or unused imports and keep the code concise
 
 This is my project goal:
 {{goal}}
@@ -38,7 +41,9 @@ This is my project goal:
 {{project_code_formatted}}
 {{errors_formatted}}
 {{short_actions}}
-Please call the appropriate function.
+Please choose a file and rewrite it. Include the complete script, including all imports and code.
+I will be saving your "code" response to a file, so it needs to be a valid, complete python script, NOT a snippet.
+Do not respond with a message explanation. Respond with the function, code, reasoning and necessary inputs to call the function.
 """
 
 create_function = compose_function(
@@ -53,17 +58,12 @@ create_function = compose_function(
             "type": "string",
             "description": "The full code for main.py, including all imports and code",
         },
-        "packages": {
-            "type": "array",
-            "description": "A list of packages to install, derived from the imports of the code.",
-            "items": {"type": "string"},
-        },
         "test": {
             "type": "string",
             "description": "The full code for main_test.py, including all imports and code. Tests should use a functional style with the assert keyword for pytest.",
         },
     },
-    required_properties=["reasoning", "code", "packages", "test"],
+    required_properties=["reasoning", "code", "test"],
 )
 
 
@@ -71,7 +71,6 @@ def create_handler(arguments, context):
     should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     code = arguments["code"]
-    packages = arguments["packages"]
     test = arguments["test"]
 
     project_dir = context["project_dir"]
@@ -88,8 +87,6 @@ def create_handler(arguments, context):
 
     save_code(code, f"{project_dir}/main.py")
     save_code(test, f"{project_dir}/main_test.py")
-
-    context["packages"] = packages
 
     return context
 
@@ -116,7 +113,6 @@ def write_complete_script_handler(arguments, context):
     code = remove_line_numbers(arguments["code"])
 
     filepath = arguments["filepath"]
-    packages = arguments.get("packages", [])
     write_path = get_full_path(filepath, context["project_dir"])
 
     log(
@@ -129,7 +125,6 @@ def write_complete_script_handler(arguments, context):
     )
 
     save_code(code, write_path)
-    context["packages"] = packages
     return context
 
 
@@ -137,8 +132,7 @@ def insert_code_handler(arguments, context):
     should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     code = arguments["code"]
-    line_number = arguments["line_number"]
-    packages = arguments.get("packages", [])
+    line_number = arguments["start_line"]
     filepath = arguments["filepath"]
     write_path = get_full_path(filepath, context["project_dir"])
 
@@ -160,8 +154,17 @@ def insert_code_handler(arguments, context):
     log(f"New code:\n{text}", title="action", type="insert", log=should_log)
 
     save_code(text, write_path)
-    context["packages"] = packages
     return context
+
+
+def edit_code_handler(arguments, context):
+    edit_type = arguments["edit_type"]
+    if edit_type == "insert":
+        return insert_code_handler(arguments, context)
+    elif edit_type == "replace":
+        return replace_code_handler(arguments, context)
+    elif edit_type == "remove":
+        return remove_code_handler(arguments, context)
 
 
 def replace_code_handler(arguments, context):
@@ -170,7 +173,6 @@ def replace_code_handler(arguments, context):
     code = arguments["code"]
     start_line = int(arguments["start_line"])
     end_line = int(arguments["end_line"])
-    packages = arguments.get("packages", [])
     filepath = arguments["filepath"]
     write_path = get_full_path(filepath, context["project_dir"])
 
@@ -183,6 +185,10 @@ def replace_code_handler(arguments, context):
         log=should_log,
     )
 
+    # floor start_line to 1
+    if start_line < 1:
+        start_line = 1
+
     # Replace the code between start_lines and end_lines with new code
     with open(write_path, "r") as f:
         text = f.read()
@@ -194,7 +200,6 @@ def replace_code_handler(arguments, context):
 
     save_code(text, write_path)
 
-    context["packages"] = packages
     return context
 
 
@@ -235,7 +240,6 @@ def create_new_file_handler(arguments, context):
     filepath = arguments["filepath"]
     code = arguments["code"]
     test = arguments["test"]
-    packages = arguments.get("packages", [])
 
     log(
         f"Creating new file {filepath}"
@@ -256,8 +260,6 @@ def create_new_file_handler(arguments, context):
         f"{os.path.splitext(filepath)[0]}_test.py", context["project_dir"]
     )
     save_code(test, test_path)
-
-    context["packages"] = packages
 
     return context
 
@@ -301,160 +303,99 @@ def get_actions():
     return [
         # {
         #     "function": compose_function(
-        #         name="insert_code",
-        #         description="Insert a snippet of code before a line. This is useful for inserting a function, for example, although if the functio needs to be called, write_complete_module is probably a better choice.",
+        #         name="create_new_file",
+        #         description="Create a Python file",
         #         properties={
         #             "reasoning": {
         #                 "type": "string",
-        #                 "description": "What does this code do? Why are you inserting it, and into which file? Please explain as though this is a code review on a pull request.",
+        #                 "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
         #             },
         #             "filepath": {
         #                 "type": "string",
-        #                 "description": "The relative path of the file to insert code into, including .py. Must be an existing file from the provided project directory.",
+        #                 "description": "The relative path of the file to create, starting with './' and ending with '.py'. Should be relative to the project directory",
         #             },
         #             "code": {
         #                 "type": "string",
-        #                 "description": "The snippet of code to insert.",
+        #                 "description": "The full code for the module names <filename>, including all imports and code",
         #             },
-        #             "line_number": {
-        #                 "type": "number",
-        #                 "description": "The line number to insert the code before.",
-        #             },
-        #             "packages": {
-        #                 "type": "array",
-        #                 "description": "A list of packages to install, derived from the imports of the code.",
-        #                 "items": {"type": "string"},
+        #             "test": {
+        #                 "type": "string",
+        #                 "description": "The full code for <filename>_test.py, which is a set of functional pytest-compatible tests for the module code, including all imports and code.",
         #             },
         #         },
-        #         required_properties=["reasoning", "filepath", "code", "line_number"],
+        #         required_properties=[
+        #             "reasoning",
+        #             "filepath",
+        #             "code",
+        #             "test",
+        #         ],
         #     ),
-        #     "handler": insert_code_handler,
+        #     "handler": create_new_file_handler,
         # },
-        {
-            "function": compose_function(
-                name="replace_code",
-                description="Replace lines in the original code with a new snippet of code.",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Which code are you replacing? What does the new code do? Why are you replacing it?",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The relative path of the file to insert code into, including .py.",
-                    },
-                    "code": {
-                        "type": "string",
-                        "description": "The snippet of code to replace the existing code with.",
-                    },
-                    "start_line": {
-                        "type": "number",
-                        "description": "The start line number of the file where code is being replaced.",
-                    },
-                    "end_line": {
-                        "type": "number",
-                        "description": "The end line number of the file where code is being replaced.",
-                    },
-                    "packages": {
-                        "type": "array",
-                        "description": "A list of packages to install, derived from the imports of the code.",
-                        "items": {"type": "string"},
-                    },
-                },
-                required_properties=[
-                    "reasoning",
-                    "filepath",
-                    "code",
-                    "start_line",
-                    "end_line",
-                ],
-            ),
-            "handler": replace_code_handler,
-        },
         # {
         #     "function": compose_function(
-        #         name="remove_code",
-        #         description="Removes a range of lines from the code. Requires a start and end line number.",
+        #         name="delete_file",
+        #         description="Delete a file that is unnecessary or contains duplicated functionality",
         #         properties={
         #             "reasoning": {
         #                 "type": "string",
-        #                 "description": "Why are you removing this code?",
+        #                 "description": "Why are we deleting this file?",
         #             },
         #             "filepath": {
         #                 "type": "string",
-        #                 "description": "The relative path of the file to remove code from, including .py. Must be an existing file from the provided project directory.",
+        #                 "description": "The relative path of the file to delete.",
+        #             },
+        #         },
+        #         required_properties=["reasoning", "filepath"],
+        #     ),
+        #     "handler": delete_file_handler,
+        # },
+        # {
+        #     "function": compose_function(
+        #         name="edit_code",
+        #         description="Edit the code in one of three ways: insert, replace or remove. Insert: adds a line or more of code at start_line. Replace: replace broken code with new code, from start_line through end_line, and remove removes start_line through end_line.",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "What are you trying to accomplish with this change? What should the outcome be?",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The relative path of the file to insert code into, including .py.",
+        #             },
+        #             "edit_type": {
+        #                 "type": "string",
+        #                 "enum": ["insert", "replace", "remove"],
+        #                 "description": "The type of edit to perform.",
+        #             },
+        #             "code": {
+        #                 "type": "string",
+        #                 "description": "The snippet of code to insert or replace the existing code with. Must include correct tabs at the beginnings of all lines as needed (\t).",
         #             },
         #             "start_line": {
         #                 "type": "number",
-        #                 "description": "The start line number of the code to remove.",
+        #                 "description": "The start line number of the file where code is being inserted, replaced or removed.",
         #             },
         #             "end_line": {
         #                 "type": "number",
-        #                 "description": "The end line number of the code to remove.",
+        #                 "description": "The end line number of the file where code is being replaced. Required for replace and remove, use -1 for insert.",
         #             },
         #         },
-        #         required_properties=["reasoning", "start_line", "end_line"],
+        #         required_properties=[
+        #             "reasoning",
+        #             "filepath",
+        #             "edit_type",
+        #             "code",
+        #             "start_line",
+        #             "end_line",
+        #         ],
         #     ),
-        #     "handler": remove_code_handler,
+        #     "handler": edit_code_handler,
         # },
         {
             "function": compose_function(
-                name="create_new_file",
-                description="Create a Python file",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The relative path of the file to create, starting with './' and ending with '.py'. Should be relative to the project directory",
-                    },
-                    "code": {
-                        "type": "string",
-                        "description": "The full code for the module names <filename>, including all imports and code",
-                    },
-                    "packages": {
-                        "type": "array",
-                        "description": "A list of packages to install, derived from the imports of the code.",
-                        "items": {"type": "string"},
-                    },
-                    "test": {
-                        "type": "string",
-                        "description": "The full code for <filename>_test.py, which is a set of functional pytest-compatible tests for the module code, including all imports and code.",
-                    },
-                },
-                required_properties=[
-                    "reasoning",
-                    "filepath",
-                    "code",
-                    "test",
-                ],
-            ),
-            "handler": create_new_file_handler,
-        },
-        {
-            "function": compose_function(
-                name="delete_file",
-                description="Delete a file that is unnecessary or contains duplicated functionality",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Why are we deleting this file?",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The relative path of the file to delete.",
-                    },
-                },
-                required_properties=["reasoning", "filepath"],
-            ),
-            "handler": delete_file_handler,
-        },
-        {
-            "function": compose_function(
-                name="write_complete_module",
-                description="Writes a python module, including imports and functions.",
+                name="write_code",
+                description="Write out the entire python script, including imports and functions and all other code. Must be a complete, standalone script, NOT a snippet or single line or 'rest of your code here'... -- use edit_code for that!",
                 properties={
                     "reasoning": {
                         "type": "string",
@@ -462,16 +403,11 @@ def get_actions():
                     },
                     "filepath": {
                         "type": "string",
-                        "description": "The relative path of the file where the code will be written, including .py. Must be an existing file from the provided project directory. Must include imports, functions and all code with no abbreviations.",
-                    },
-                    "packages": {
-                        "type": "array",
-                        "description": "A list of packages to install, derived from the imports of the code.",
-                        "items": {"type": "string"},
+                        "description": "Where the file wlil be ritten.",
                     },
                     "code": {
                         "type": "string",
-                        "description": "The complete module code to write.",
+                        "description": "The complete module code to write. Must include imports, functions and all code with no abbreviations.",
                     },
                 },
                 required_properties=["reasoning", "filepath", "code"],
@@ -511,11 +447,17 @@ def step(context):
         prompt = create_prompt
         functions = [create_function]
 
-    context["available_actions"] = "Available functions: " + "\n".join(
-        [f"{fn['function']['name']}: {fn['function']['description']}" for fn in actions]
-    )
+    context["available_actions"] = "Available functions:\n"
+    for fn in actions:
+        context[
+            "available_actions"
+        ] += f"{fn['function']['name']}: {fn['function']['description']}\n"
+        # include properties and descriptions
+        for prop, details in fn["function"]["parameters"]["properties"].items():
+            context["available_actions"] += f"  {prop}: {details['description']}\n"
+        context["available_actions"] += "\n"
 
-    context["short_actions"] = "Available functions:" + ", ".join(
+    context["short_actions"] = "Available functions: " + ", ".join(
         [fn["function"]["name"] for fn in actions]
     )
 
