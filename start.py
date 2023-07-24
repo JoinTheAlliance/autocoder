@@ -114,6 +114,11 @@ def run(project_data):
                 json.dump(options, f)
 
     from autocoder import autocoder
+    # for each key in options, add to project_data
+    
+    project_data["step"] = options.get("step", False)
+    project_data["log_level"] = options.get("log_level", "normal")
+    project_data["model"] = options.get("model", "gpt-3.5-turbo")
 
     autocoder(project_data)
     sys.exit(0)
@@ -230,8 +235,8 @@ def handle_options_menu():
     # Load existing options or set defaults
     options_path = ".preferences"
     default_options = {
-        "stepped": False,
-        "logging": "Normal",
+        "step": False,
+        "log_level": "Normal",
         "api_key": os.environ.get("OPENAI_API_KEY", ""),
         "model": "gpt-3.5-turbo",
     }
@@ -251,7 +256,7 @@ def handle_options_menu():
             title="Options Menu",
             text="Choose an option to modify:",
             buttons=[
-                ("Stepped " + ("ON" if options["stepped"] else "OFF"), "Stepped"),
+                ("Stepped " + ("ON" if options["step"] else "OFF"), "Step"),
                 ("Logging", "Logging"),
                 ("API Key", "API Key"),
                 ("Model", "Model"),
@@ -263,26 +268,26 @@ def handle_options_menu():
         if option == "Back":
             return options
 
-        if option == "Stepped":
-            options["stepped"] = not options["stepped"]
+        if option == "Step":
+            options["step"] = not options["step"]
         elif option == "Logging":
-            logging_option = button_dialog(
+            log_level_option = button_dialog(
                 title="Logging Level",
-                text="Choose a logging level:",
+                text="Choose a log_level level:",
                 buttons=[
                     (
-                        f"Normal{' *' if options['logging'] == 'Normal' else ''}",
-                        "Normal",
+                        f"Normal{' *' if options['log_level'] == 'normal' else ''}",
+                        "normal",
                     ),
-                    (f"Debug{' *' if options['logging'] == 'Debug' else ''}", "Debug"),
-                    (f"Quiet{' *' if options['logging'] == 'Quiet' else ''}", "Quiet"),
+                    (f"Debug{' *' if options['log_level'] == 'debug' else ''}", "debug"),
+                    (f"Quiet{' *' if options['log_level'] == 'quiet' else ''}", "quiet"),
                     ("Back", "Back"),
                 ],
                 style=style,
             ).run()
-            if logging_option == "Back":
+            if log_level_option == "Back":
                 continue
-            options["logging"] = logging_option
+            options["log_level"] = log_level_option
         elif option == "API Key":
             new_key = (
                 input(f"Enter your new API key (default: {options['api_key']}): ")
@@ -295,7 +300,7 @@ def handle_options_menu():
                 text="Choose a model:",
                 buttons=[
                     (
-                        f"gpt-3.5-turbo{' *' if options['model'] == 'gpt-3.5-turbo' else ''}",
+                        f"gpt-3.5{' *' if options['model'] == 'gpt-3.5-turbo' else ''}",
                         "gpt-3.5-turbo",
                     ),
                     (f"gpt-4{' *' if options['model'] == 'gpt-4' else ''}", "gpt-4"),

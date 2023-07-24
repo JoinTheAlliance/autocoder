@@ -175,8 +175,7 @@ def test_delete_file_handler():
 
     context = {
         "project_dir": "test_dir",
-        "quiet": False,
-        "debug": False,
+        "log_level": "debug"
     }
 
     arguments = {

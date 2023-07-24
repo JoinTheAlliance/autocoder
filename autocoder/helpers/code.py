@@ -250,7 +250,7 @@ common_std_libs = [
     "subprocess",
     "multiprocessing",
     "threading",
-    "logging",
+    "log_level",
     "argparse",
     "shutil",
     "glob",

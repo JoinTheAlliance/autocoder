@@ -21,7 +21,10 @@ project_data = {
     "project_name": "my_project",
     "goal": "my_goal",
     "project_dir": "my_project_dir",
-    "project_path": "my_project_path"
+    "project_path": "my_project_path",
+    "log_level": "normal",
+    "step": False,
+    "model": "gpt-3.5-turbo"
 }
 
 autocoder(project_data)
@@ -34,7 +37,7 @@ More information on ReAct (Reasoning and Acting) agents can be found <a href="ht
 
 ## Loop
 
-Autocoder works by looping between a "reason"" and "act" step until the project is validated and tested. The loop runs forever but you can enable "stepped" mode in options to step through the loop manually.
+Autocoder works by looping between a "reason"" and "act" step until the project is validated and tested. The loop runs forever but you can enable "step" mode in options to step through the loop manually.
 
 ## Actions
 

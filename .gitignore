@@ -14,3 +14,4 @@ projects/
 .pytest_cache/
 .preferences
 *.mid
+*.midi

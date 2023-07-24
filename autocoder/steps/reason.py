@@ -68,13 +68,19 @@ def step(context, loop_dict):
     """
     if context["running"] == False:
         return context
+    should_log = context.get("log_level", "normal") != "quiet"
+
+    log(
+        "Reasoning Step Started",
+        title="step",
+        type="info",
+        log=should_log,
+    )
 
     context = get_file_count(context)
 
-    quiet = context.get("quiet")
-    debug = context.get("debug")
-
-    should_log = not quiet or debug
+    debug = context.get("log_level", "normal") == "debug"
+    should_log = context.get("log_level", "normal") != "quiet"
 
     # If we have no files, go immediately to the create step
     if context["file_count"] == 0:
@@ -109,6 +115,7 @@ def step(context, loop_dict):
 
     # If any of the files failed to validate for any reason, go immediately to the edit step
     if context["project_validated"] is not True:
+        print("*** project validation failed")
         validation_errors = ""
         for file_dict in context["project_code"]:
             file_path = file_dict["absolute_path"]
@@ -147,13 +154,15 @@ def step(context, loop_dict):
             context[
                 "reasoning"
             ] = "The project failed in testing. I need to fix the test errors."
-        return context
+            return context
 
     text = compose_prompt(reasoning_prompt, context)
     functions = compose_project_validation_function()
 
     # Handle the auto case
-    response = openai_function_call(text=text, functions=functions, debug=debug)
+    response = openai_function_call(
+        text=text, functions=functions, debug=debug, model=context["model"]
+    )
 
     # Add the action reasoning to the context object
     is_valid_and_complete = response["arguments"]["is_valid_and_complete"]
@@ -167,6 +176,14 @@ def step(context, loop_dict):
         )
         stop(loop_dict)
         context["running"] = False
+
+    else:
+        log(
+            response["arguments"]["reasoning"],
+            title="validation",
+            type="reasoning",
+            log=should_log,
+        )
 
     context["reasoning"] = response["arguments"]["reasoning"]
     return context

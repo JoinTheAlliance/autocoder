@@ -68,7 +68,8 @@ create_function = compose_function(
 
 
 def create_handler(arguments, context):
-    should_log = not context.get("quiet") or context.get("debug")
+    should_log = context.get("log_level", "normal") != "quiet"
+    
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     test = arguments["test"]
@@ -108,7 +109,7 @@ def remove_line_numbers(text):
 
 
 def write_complete_script_handler(arguments, context):
-    should_log = not context.get("quiet") or context.get("debug")
+    should_log = context.get("log_level", "normal") != "quiet"
     reasoning = arguments["reasoning"]
     code = remove_line_numbers(arguments["code"])
 
@@ -129,7 +130,7 @@ def write_complete_script_handler(arguments, context):
 
 
 def insert_code_handler(arguments, context):
-    should_log = not context.get("quiet") or context.get("debug")
+    should_log = context.get("log_level", "normal") != "quiet"
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     start_line = arguments["start_line"]
@@ -168,7 +169,7 @@ def edit_code_handler(arguments, context):
 
 
 def replace_code_handler(arguments, context):
-    should_log = not context.get("quiet") or context.get("debug")
+    should_log = context.get("log_level", "normal") != "quiet"
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     start_line = int(arguments["start_line"])
@@ -204,7 +205,7 @@ def replace_code_handler(arguments, context):
 
 
 def remove_code_handler(arguments, context):
-    should_log = not context.get("quiet") or context.get("debug")
+    should_log = context.get("log_level", "normal") != "quiet"
     reasoning = arguments["reasoning"]
     start_line = int(arguments["start_line"])
     end_line = int(arguments["end_line"])
@@ -235,7 +236,7 @@ def remove_code_handler(arguments, context):
 
 
 def create_new_file_handler(arguments, context):
-    should_log = not context.get("quiet") or context.get("debug")
+    should_log = context.get("log_level", "normal") != "quiet"
     reasoning = arguments["reasoning"]
     filepath = arguments["filepath"]
     code = arguments["code"]
@@ -265,7 +266,7 @@ def create_new_file_handler(arguments, context):
 
 
 def delete_file_handler(arguments, context):
-    should_log = not context.get("quiet") or context.get("debug")
+    should_log = context.get("log_level", "normal") != "quiet"
     reasoning = arguments["reasoning"]
     filepath = arguments["filepath"]
 
@@ -403,7 +404,7 @@ def get_actions():
                     },
                     "filepath": {
                         "type": "string",
-                        "description": "Where the file wlil be ritten.",
+                        "description": "Where the file will be written.",
                     },
                     "code": {
                         "type": "string",
@@ -431,13 +432,18 @@ def step(context):
     if context["running"] == False:
         return context
 
+    should_log = context.get("log_level", "normal") != "quiet"
+    debug = context.get("log_level", "normal") == "debug"
+
+    log(
+        "Act Step Started",
+        title="step",
+        type="info",
+        log=should_log,
+    )
+
     prompt = edit_prompt
     actions = get_actions()
-
-    quiet = context.get("quiet")
-    debug = context.get("debug")
-
-    should_log = not quiet or debug
 
     # each entry in functions is a dict
     # # get the "fuction" value from each entry in the function list
@@ -474,7 +480,7 @@ def step(context):
 
     text = compose_prompt(prompt, context)
 
-    response = openai_function_call(text=text, functions=functions, debug=debug)
+    response = openai_function_call(text=text, functions=functions, debug=debug, model=context["model"])
 
     # find the function in functions with the name that matches response["function_name"]
     # then call the handler with the arguments and context

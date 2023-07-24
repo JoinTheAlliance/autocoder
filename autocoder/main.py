@@ -20,33 +20,7 @@ def autocoder(project_data):
     Main entrypoint for autocoder. Usually called from the CLI.
     """
 
-    if (
-        project_data.get("quiet") is None
-        and "-q" in sys.argv
-        or os.getenv("QUIET", "").lower() == "true"
-    ):
-        project_data["quiet"] = True
-    else:
-        project_data["quiet"] = False
-    if (
-        project_data.get("debug") is None
-        and "-d" in sys.argv
-        or os.getenv("DEBUG", "").lower() == "true"
-    ):
-        project_data["debug"] = True
-    else:
-        project_data["debug"] = False
-
-    if (
-        project_data.get("step") is None
-        and ("-s" in sys.argv
-        or os.getenv("STEP", "").lower() == "true")
-    ):
-        project_data["step"] = True
-    else:
-        project_data["step"] = False
-
-    if project_data["quiet"] is False:
+    if project_data["log_level"] != "quiet":
         print_header(text="autocoder", color="yellow", font="slant")
         log("Initializing...", title="autocoder", type="system", panel=False)
 

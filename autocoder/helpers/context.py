@@ -51,7 +51,7 @@ def read_and_format_code(context):
         if validation_success is False:
             project_files_str += "Validation Error: {}\n".format(validation_error)
         if test_success is not None:
-            project_files_str += "Tested: {}\n".format(test_success)
+            project_files_str += "Tests Passed: {}\n".format(test_success)
         if test_success is False:
             project_files_str += "Pytest Error: {}\n".format(test_error)
         project_files_str += "\nLine # ------------------------------ CODE -------------------------------------\n"
@@ -199,8 +199,8 @@ def backup_project(context):
 
 
 def handle_packages(context):
-    debug = context.get("debug", False)
-    should_log = not context.get("quiet") or context.get("debug")
+    debug = context.get("log_level", "normal") == "debug"
+    should_log = context.get("log_level", "normal") != "quiet"
     
     # Get the set of standard library modules
     std_module_set = set(sys.builtin_module_names)
