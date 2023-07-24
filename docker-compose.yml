@@ -4,11 +4,11 @@
 ## Run with # docker exec -it autocoder python start.py
 ##
 #
-##Settings commented for the following:
+## Settings commented for the following:
 #
-#Expose ports for your autocoder
-#Map it's workdir to a local system dir to more easily interact with it's files
-#Adjust the current hardcap of 90% CPU usage and 7GB ram usage
+# Expose ports for your autocoder
+# You may wish to map it's project_data dir to a different or unique dir
+# Adjust the current hardcap of 90% CPU usage and 7GB ram usage
 #
 version: '3'
 services:
@@ -19,8 +19,8 @@ services:
 ## Update ports if you need them exposed
 #    ports:
 #      - "7860:7860"
-#    volumes:
-#      - /your/local/folder:/app
+    volumes:
+      - ./project_data:/app/project_data
     env_file:
       - .env
     deploy:
