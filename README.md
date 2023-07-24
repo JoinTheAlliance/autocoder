@@ -56,8 +56,9 @@ context = {
     project_path
 }
 
-# Added by orient step
+# Added by reasoning step
 context = {
+    reasoning,
     file_count,
     filetree,
     filetree_formatted,
@@ -78,15 +79,8 @@ context = {
     project_code_formatted
 }
 
-# Added by decide step
+# Action step context
 context = {
-    action_name,
-    reasoning
-}
-
-# Final context for actions
-context = {
-    epoch, # current iteration of the loop
     name, # project name
     goal, # project goal
     project_dir,
@@ -98,6 +92,11 @@ context = {
     main_success, # included in project_code_formatted
     main_error, # included in project_code_formatted
     backup,
+    available_actions, # list of available actions
+    available_action_names, # list of just the action names
+    project_code_formatted, # formatted for prompt template
+    action_name,
+    reasoning, # formatted for prompt template
     project_code: [{
         rel_path,
         file_path,
@@ -107,12 +106,7 @@ context = {
         test_success,
         test_error,
         test_output,
-    }],
-    available_actions, # list of available actions
-    available_action_names, # list of just the action names
-    project_code_formatted, # formatted for prompt template
-    action_name,
-    reasoning # formatted for prompt template
+    }]
 }
 ```
 
