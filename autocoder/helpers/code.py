@@ -1,6 +1,7 @@
 import os
 import subprocess
 import ast
+import astor
 import sys
 import black
 from importlib_metadata import distributions
@@ -156,11 +157,38 @@ def validate_code(code):
 def save_code(code, filename):
     try:
         code = format_code(code)
+        code = organize_imports(code)
     except Exception as e:
-        log(f"Code could not be formatted: {e}", title="save_code", type="warning")
+        log(f"Code could not be formatted: {e}", title="save_code", type="warning")    
     with open(filename, "w") as f:
         f.write(code)
 
+
+def organize_imports(code):
+    tree = ast.parse(code)
+    
+    imports = []
+    other_lines = []
+    
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            imports.append(node)
+        else:
+            other_lines.append(node)
+
+    # Deduplicate and sort
+    seen_imports = set()
+    unique_sorted_imports = []
+    for node in sorted(imports, key=lambda node: (node.__class__.__name__, astor.to_source(node).strip())):
+        import_line = astor.to_source(node).strip()
+        if import_line not in seen_imports:
+            seen_imports.add(import_line)
+            unique_sorted_imports.append(node)
+
+    # Reconstruct tree
+    tree.body = unique_sorted_imports + other_lines
+
+    return astor.to_source(tree)
 
 def format_code(code: str, line_length: int = 110) -> str:
     """Format python code string with black.

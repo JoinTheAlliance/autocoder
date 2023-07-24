@@ -15,3 +15,5 @@ projects/
 .preferences
 *.mid
 *.midi
+build/
+dist/

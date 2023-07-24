@@ -33,10 +33,7 @@ Notes:
 - When rewriting the code, include the complete script, including all imports and code
 - Do NOT shorten or abbreviate anything, DO NOT use "..." or "# Rest of the code" - ALWAYS put the complete code in your response
 
-Task:
-- Choose a file to edit, create or remove
-- Respond with the function, code, reasoning and necessary inputs to call the function
-- Call one of the available functions with the correct arguments to edit the file
+
 
 This is my project goal:
 {{goal}}
@@ -44,7 +41,16 @@ This is my project goal:
 {{reasoning}}
 {{project_code_formatted}}
 {{errors_formatted}}
-{{available_action_names}}"""
+{{available_action_names}}
+
+Task:
+- First reason out loud about what you are going to do
+- Based on your reasoning, choose a function by name
+- Then choose which file to edit. You can also create or remove a file if necessary
+- Respond with the function, code, reasoning and necessary inputs to call the function
+- 
+
+"""
 
 create_function = compose_function(
     name="create",
@@ -270,6 +276,15 @@ def delete_file_handler(arguments, context):
     reasoning = arguments["reasoning"]
     filepath = arguments["filepath"]
 
+    if "main.py" in filepath or "main_test.py" in filepath:
+        log(
+            f"File {filepath} contains main.py or main_test.py, so it will not be deleted",
+            title="action",
+            type="warning",
+            log=should_log,
+        )
+        return context
+
     log(
         f"Deleting file {filepath}" + f"\n\nReasoning:\n{reasoning}",
         title="action",
@@ -302,59 +317,101 @@ def delete_file_handler(arguments, context):
 
 def get_actions():
     return [
+        # {
+        #     "function": compose_function(
+        #         name="create_new_file",
+        #         description="Create a Python file",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "Explain your reasoning step-by-step.",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The path of the file to create.",
+        #             },
+        #             "code": {
+        #                 "type": "string",
+        #                 "description": "The full code for the module, including all imports and code, with no abbreviations",
+        #             },
+        #             "test": {
+        #                 "type": "string",
+        #                 "description": "A set of functional pytest-compatible tests for the module code.",
+        #             },
+        #         },
+        #         required_properties=[
+        #             "reasoning",
+        #             "filepath",
+        #             "code",
+        #             "test",
+        #         ],
+        #     ),
+        #     "handler": create_new_file_handler,
+        # },
+        # {
+        #     "function": compose_function(
+        #         name="delete_file",
+        #         description="Delete a file that is unnecessary or contains duplicate functionality",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "Why are we deleting this file? Explain step-by-step.",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The path of the file to delete.",
+        #             },
+        #         },
+        #         required_properties=["reasoning", "filepath"],
+        #     ),
+        #     "handler": delete_file_handler,
+        # },
+        # {
+        #     "function": compose_function(
+        #         name="edit_code",
+        #         description="Insert, replace or remove code. Insert: adds a line or more of code at start_line. Replace: replace broken code with new code, from start_line through end_line. Remove: removes start_line through end_line.",
+        #         properties={
+        #             "reasoning": {
+        #                 "type": "string",
+        #                 "description": "Explain your reasoning step-by-step.",
+        #             },
+        #             "filepath": {
+        #                 "type": "string",
+        #                 "description": "The path of the file to edit.",
+        #             },
+        #             "edit_type": {
+        #                 "type": "string",
+        #                 "enum": ["insert", "replace", "remove"],
+        #                 "description": "The type of edit to perform.",
+        #             },
+        #             "code": {
+        #                 "type": "string",
+        #                 "description": "The new code to insert or replace existing code with.",
+        #             },
+        #             "start_line": {
+        #                 "type": "number",
+        #                 "description": "The start line number where code is being inserted, replaced or removed.",
+        #             },
+        #             "end_line": {
+        #                 "type": "number",
+        #                 "description": "The end line number where code is being replaced. Required for replace and remove, ignored for insert (set to -1).",
+        #             },
+        #         },
+        #         required_properties=[
+        #             "reasoning",
+        #             "filepath",
+        #             "edit_type",
+        #             "code",
+        #             "start_line",
+        #             "end_line",
+        #         ],
+        #     ),
+        #     "handler": edit_code_handler,
+        # },
         {
             "function": compose_function(
-                name="create_new_file",
-                description="Create a Python file",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Explain your reasoning step-by-step.",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The path of the file to create.",
-                    },
-                    "code": {
-                        "type": "string",
-                        "description": "The full code for the module, including all imports and code, with no abbreviations",
-                    },
-                    "test": {
-                        "type": "string",
-                        "description": "A set of functional pytest-compatible tests for the module code.",
-                    },
-                },
-                required_properties=[
-                    "reasoning",
-                    "filepath",
-                    "code",
-                    "test",
-                ],
-            ),
-            "handler": create_new_file_handler,
-        },
-        {
-            "function": compose_function(
-                name="delete_file",
-                description="Delete a file that is unnecessary or contains duplicate functionality",
-                properties={
-                    "reasoning": {
-                        "type": "string",
-                        "description": "Why are we deleting this file? Explain step-by-step.",
-                    },
-                    "filepath": {
-                        "type": "string",
-                        "description": "The path of the file to delete.",
-                    },
-                },
-                required_properties=["reasoning", "filepath"],
-            ),
-            "handler": delete_file_handler,
-        },
-        {
-            "function": compose_function(
-                name="edit_code",
-                description="Insert, replace or remove code. Insert: adds a line or more of code at start_line. Replace: replace broken code with new code, from start_line through end_line. Remove: removes start_line through end_line.",
+                name="replace_code",
+                description="Replace some of the existing code with new code, from start_line through end_line. Replace with an emptry string to remove lines, or insert new lines by setting start_line and end_line to the same line number.",
                 properties={
                     "reasoning": {
                         "type": "string",
@@ -363,11 +420,6 @@ def get_actions():
                     "filepath": {
                         "type": "string",
                         "description": "The path of the file to edit.",
-                    },
-                    "edit_type": {
-                        "type": "string",
-                        "enum": ["insert", "replace", "remove"],
-                        "description": "The type of edit to perform.",
                     },
                     "code": {
                         "type": "string",
@@ -385,13 +437,12 @@ def get_actions():
                 required_properties=[
                     "reasoning",
                     "filepath",
-                    "edit_type",
                     "code",
                     "start_line",
                     "end_line",
                 ],
             ),
-            "handler": edit_code_handler,
+            "handler": replace_code_handler,
         },
         {
             "function": compose_function(

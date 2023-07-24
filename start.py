@@ -1,6 +1,7 @@
 import os
 import json
 import sys
+from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.shortcuts import button_dialog
 from prompt_toolkit.styles import Style
 from prompt_toolkit.key_binding import KeyBindings
@@ -10,10 +11,11 @@ from termcolor import colored
 
 style = Style.from_dict(
     {
-        "dialog": "bg:#88ff88",
-        "button": "bg:#884444 #ffffff",
-        "dialog.body": "bg:#ccffcc",
-        "dialog shadow": "bg:#000088",
+        "dialog": "bg:#000000",
+        "button": "bg:#000000 #ffffff",
+        "dialog.body": "bg:#000066",
+        "dialog shadow": "bg:#000022",
+        "dialog.title": "bg:#000000 #00ff00",
     }
 )
 
@@ -46,7 +48,7 @@ def get_project_details(project_data=None, is_editing=False):
         {
             "key": "goal",
             "question": "What do you want your script to do? Please be as detailed as possible.",
-        }
+        },
     ]
 
     project_data = project_data or {}
@@ -85,6 +87,7 @@ def save_project_data(name, project_data):
 
 
 def run(project_data):
+    options = {"step": False, "log_level": "normal"}
     # read and parse _options.json
     options_path = ".preferences"
     if os.path.exists(options_path):
@@ -110,8 +113,9 @@ def run(project_data):
                 json.dump(options, f)
 
     from autocoder import autocoder
+
     # for each key in options, add to project_data
-    
+
     project_data["step"] = options.get("step", False)
     project_data["log_level"] = options.get("log_level", "normal")
     project_data["model"] = options.get("model", "gpt-3.5-turbo-0613")
@@ -130,12 +134,31 @@ def get_existing_projects():
 
 
 def choose_project():
-    return button_dialog(
-        title="Project name",
-        text="Choose a project:",
-        buttons=[(name, name) for name in get_existing_projects()] + [("Back", "Back")],
-        style=style,
-    ).run()
+    project_completer = WordCompleter(
+        get_existing_projects() + ["Back"], ignore_case=True, sentence=True
+    )
+    session = PromptSession(completer=project_completer, complete_while_typing=True)
+
+    print(
+        colored(
+            "\n########################## EXISTING PROJECTS #############################\n",
+            "yellow",
+        )
+    )
+    print(", ".join(get_existing_projects()))
+    print(
+        colored(
+            "\n##########################################################################\n",
+            "yellow",
+        )
+    )
+
+    while True:
+        project_name = session.prompt(
+            "Choose a project (tab to complete, enter to select): "
+        )
+        if project_name in get_existing_projects() or project_name.lower() == "back":
+            return project_name
 
 
 def new_or_edit_project(is_editing=False):
@@ -275,8 +298,14 @@ def handle_options_menu():
                         f"Normal{' *' if options['log_level'] == 'normal' else ''}",
                         "normal",
                     ),
-                    (f"Debug{' *' if options['log_level'] == 'debug' else ''}", "debug"),
-                    (f"Quiet{' *' if options['log_level'] == 'quiet' else ''}", "quiet"),
+                    (
+                        f"Debug{' *' if options['log_level'] == 'debug' else ''}",
+                        "debug",
+                    ),
+                    (
+                        f"Quiet{' *' if options['log_level'] == 'quiet' else ''}",
+                        "quiet",
+                    ),
                     ("Back", "Back"),
                 ],
                 style=style,
@@ -299,7 +328,10 @@ def handle_options_menu():
                         f"gpt-3.5{' *' if options['model'] == 'gpt-3.5-turbo-0613' else ''}",
                         "gpt-3.5-turbo-0613",
                     ),
-                    (f"gpt-4{' *' if options['model'] == 'gpt-4' else ''}", "gpt-4-0613"),
+                    (
+                        f"gpt-4{' *' if options['model'] == 'gpt-4' else ''}",
+                        "gpt-4-0613",
+                    ),
                     ("Back", "Back"),
                 ],
                 style=style,

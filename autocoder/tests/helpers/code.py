@@ -6,6 +6,7 @@ from autocoder.helpers.code import (
     has_functions_called,
     is_runnable,
     count_lines,
+    organize_imports,
     validate_file,
     validate_code,
     save_code,
@@ -149,7 +150,9 @@ def hello():
 
 def test_validate_file_success():
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
-        tmp.write(b"import os\ndef hello():\n\tprint('Hello, world!')\nhello()\n\ndef goodbye():\n\tprint('Goodbye, world!')\ngoodbye()")
+        tmp.write(
+            b"import os\ndef hello():\n\tprint('Hello, world!')\nhello()\n\ndef goodbye():\n\tprint('Goodbye, world!')\ngoodbye()"
+        )
     output = validate_file(tmp.name)
     assert validate_file(tmp.name) == {"success": True, "error": None}
     os.remove(tmp.name)
@@ -179,3 +182,27 @@ test_hello()
     # assert "1 passed" in result["output"]
     # assert result["error"] == ""
     os.remove(tmp.name)
+
+
+def test_organize_imports():
+    expected_output = """\
+import os
+import sys
+from random import randint
+from random import randint, shuffle
+
+
+def foo():
+    return randint(1, 10)
+
+
+print(foo())
+"""
+    to_test = ""
+    # get the first two lines of expected_output and add to to_test
+    for line in expected_output.split("\n")[:2]:
+        to_test += line + "\n"
+    # now add all of expected_output to to_test to simulate doubled imports
+    to_test += expected_output
+    actual_output = organize_imports(to_test)
+    assert expected_output.strip() == actual_output.strip()

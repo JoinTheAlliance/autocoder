@@ -52,8 +52,8 @@ def read_and_format_code(context):
             project_files_str += "Validation Error: {}\n".format(validation_error)
         if test_success is not None:
             project_files_str += "Tests Passed: {}\n".format(test_success)
-        if test_success is False:
-            project_files_str += "Pytest Error: {}\n".format(test_error)
+        # if test_success is False:
+        #     project_files_str += "Pytest Error: {}\n".format(test_error)
         project_files_str += "\nLine # ------------------------------ CODE -------------------------------------\n"
         for i, line in enumerate(content.split('\n')):
             project_files_str += "[{}] {}\n".format(i + 1, line)
@@ -108,6 +108,7 @@ def validate_files(context):
 
 
 def run_tests(context):
+    print('***** RUNNING TESTS')
     # get python files which don't contain test in their name
 
     # if not, error
@@ -129,14 +130,15 @@ def run_tests(context):
         else:
             project_code_notests.append(file_dict)
 
+    print('****** TESTS')
     for file_dict in project_code_tests:
         file_path = file_dict["absolute_path"]
         test = run_code_tests(file_path)
+        print(test)
         if test["success"] is False:
             project_tested = False
         file_dict["test_success"] = test["success"]
-        file_dict["test_error"] = test["error"]
-        file_dict["test_output"] = test["output"]
+        file_dict["test_error"] = test["output"]
     context["project_tested"] = project_tested
     context["project_code"] = project_code_notests + project_code_tests
     return context
@@ -185,7 +187,7 @@ def collect_errors(context):
     for error in project_errors:
         error_str += f"{error}\n"
     if error_str != "":
-        context["errors_formatted"] = "Errors:\n" + error_str
+        context["errors_formatted"] = error_str
     else:
         context["errors_formatted"] = ""
     return context
@@ -219,16 +221,6 @@ def handle_packages(context):
         imports = list(extract_imports(file_dict["content"], file_dict["absolute_path"]))
         if len(imports) > 0:
             packages = list(packages) + imports
-
-    # check if requirements.txt exists, if it does read it
-    old_packages = []
-    if file_exists(f"{project_dir}/requirements.txt"):
-        with open(f"{project_dir}/requirements.txt", "r") as f:
-            old_packages = f.read().split("\n")
-    # remove empty strings and version numbers
-    old_packages = [p.split("==")[0] for p in old_packages if p != "" and p != "\n"]
-    # join packages and old_packages
-    packages = list(set(packages + old_packages))
 
     # Get a list of currently installed packages
     installed = {pkg.key for pkg in pkg_resources.working_set}
@@ -268,8 +260,8 @@ def handle_packages(context):
         )
 
     # for each package in packages, add to project_dir/requirements.txt
-    with open(f"{project_dir}/requirements.txt", "w") as f:
-        # Only add to requirements.txt if it's not a built-in package
-        f.write("\n".join([p for p in packages if p not in std_module_set]))
+    # with open(f"{project_dir}/requirements.txt", "w") as f:
+    #     # Only add to requirements.txt if it's not a built-in package
+    #     f.write("\n".join([p for p in packages if p not in std_module_set]))
 
     return context

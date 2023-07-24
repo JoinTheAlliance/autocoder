@@ -100,6 +100,19 @@ def step(context, loop_dict):
     context = collect_errors(context)
     context = read_and_format_code(context)
 
+    # format context into a string of key:value
+    context_str = ""
+    for key, value in context.items():
+        context_str += f"{key}:\n\t{value}\n"
+
+    log(
+        "Context"+"\n"+context_str,
+        title="context",
+        type="context",
+        color="yellow",
+        log=debug,
+    )
+
     # If we have an error, go immediately to the edit step
     if context.get("main_success") is False and context.get("main_error") is not None:
         log(

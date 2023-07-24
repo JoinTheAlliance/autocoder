@@ -7,3 +7,4 @@ agentlogger
 pytest
 prompt_toolkit
 black
+astor
