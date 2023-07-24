@@ -46,11 +46,7 @@ def get_project_details(project_data=None, is_editing=False):
         {
             "key": "goal",
             "question": "What do you want your script to do? Please be as detailed as possible.",
-        },
-        {
-            "key": "test",
-            "question": "How can I test the script? Please be as detailed as possible.",
-        },
+        }
     ]
 
     project_data = project_data or {}
@@ -118,7 +114,7 @@ def run(project_data):
     
     project_data["step"] = options.get("step", False)
     project_data["log_level"] = options.get("log_level", "normal")
-    project_data["model"] = options.get("model", "gpt-3.5-turbo")
+    project_data["model"] = options.get("model", "gpt-3.5-turbo-0613")
 
     autocoder(project_data)
     sys.exit(0)
@@ -238,7 +234,7 @@ def handle_options_menu():
         "step": False,
         "log_level": "Normal",
         "api_key": os.environ.get("OPENAI_API_KEY", ""),
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-3.5-turbo-0613",
     }
 
     if os.path.exists(options_path):
@@ -300,10 +296,10 @@ def handle_options_menu():
                 text="Choose a model:",
                 buttons=[
                     (
-                        f"gpt-3.5{' *' if options['model'] == 'gpt-3.5-turbo' else ''}",
-                        "gpt-3.5-turbo",
+                        f"gpt-3.5{' *' if options['model'] == 'gpt-3.5-turbo-0613' else ''}",
+                        "gpt-3.5-turbo-0613",
                     ),
-                    (f"gpt-4{' *' if options['model'] == 'gpt-4' else ''}", "gpt-4"),
+                    (f"gpt-4{' *' if options['model'] == 'gpt-4' else ''}", "gpt-4-0613"),
                     ("Back", "Back"),
                 ],
                 style=style,

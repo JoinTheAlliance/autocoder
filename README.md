@@ -16,21 +16,21 @@ To use autocoder inside other projects and agents
 
 ```python
 from autocoder import autocoder
-
-project_data = {
-    "project_name": "my_project",
-    "goal": "my_goal",
-    "project_dir": "my_project_dir",
-    "project_path": "my_project_path",
-    "log_level": "normal",
-    "step": False,
-    "model": "gpt-3.5-turbo"
+data = {
+    "project_name": "random_midi_generator", # name of the project
+    "goal": "Generate a 2 minute midi track with multiple instruments. The track must contain at least 500 notes, but can contain any number of notes. The track should be polyphonic and have multiple simultaneous instruments", # goal of the project
+    "project_dir": "random_midi_generator", # name of the project directory
+    "log_level": "normal", # normal, debug, or quiet
+    "step": False, # whether to step through the loop manually, False by default
+    "model": "gpt-3.5-turbo", # default
+    "api_key": <your openai api key> # can also be passed in via env var OPENAI_API_KEY
 }
 
 autocoder(project_data)
 ```
 
 # Core Concepts
+
 Autocoder is a ReAct-style python coding agent. It is designed to be run standalone with a CLI or programmatically by other agents.
 
 More information on ReAct (Reasoning and Acting) agents can be found <a href="https://ai.googleblog.com/2022/11/react-synergizing-reasoning-and-acting.html">here</a>.

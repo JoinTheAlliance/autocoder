@@ -480,7 +480,7 @@ def step(context):
 
     text = compose_prompt(prompt, context)
 
-    response = openai_function_call(text=text, functions=functions, debug=debug, model=context["model"])
+    response = openai_function_call(text=text, functions=functions, debug=debug, model=context.get("model", "gpt-3.5-turbo-0613"))
 
     # find the function in functions with the name that matches response["function_name"]
     # then call the handler with the arguments and context

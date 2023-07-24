@@ -114,8 +114,7 @@ def step(context, loop_dict):
         return context
 
     # If any of the files failed to validate for any reason, go immediately to the edit step
-    if context["project_validated"] is not True:
-        print("*** project validation failed")
+    if context["project_validated"] is False:
         validation_errors = ""
         for file_dict in context["project_code"]:
             file_path = file_dict["absolute_path"]
@@ -134,12 +133,12 @@ def step(context, loop_dict):
             ] = "The project failed to validate. I need to fix the validation errors."
         return context
 
-    if context["project_tested"] is not True:
+    if context["project_tested"] is False:
         test_errors = ""
         for file_dict in context["project_code"]:
             if (
-                file_dict.get("test_error") is not None
-                and file_dict.get("test_error") is not False
+                file_dict.get("test_success") is False
+                and file_dict.get("test_error") is not None
             ):
                 test_errors += (
                     f"\n{file_dict['absolute_path']}:\n{file_dict['test_error']}\n"
@@ -161,7 +160,7 @@ def step(context, loop_dict):
 
     # Handle the auto case
     response = openai_function_call(
-        text=text, functions=functions, debug=debug, model=context["model"]
+        text=text, functions=functions, debug=debug, model=context.get("model", "gpt-3.5-turbo-0613")
     )
 
     # Add the action reasoning to the context object
