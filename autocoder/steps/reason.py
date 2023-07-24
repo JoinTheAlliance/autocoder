@@ -205,16 +205,28 @@ def step(context, loop_dict):
             log=should_log,
         )
 
-
-    context["reasoning"] = response["arguments"]["reasoning"]
+    header = "You provided this reasoning for your next action:\n"
+    context["reasoning"] = header + response["arguments"]["reasoning"]
     context["is_valid_and_complete"] = response["arguments"]["is_valid_and_complete"]
     context["action_name"] = response["arguments"]["action_name"]
     context["action_filename"] = response["arguments"]["filename"]
 
     log(
-        f"Reasoning:\n{context['reasoning']}",
+        f'Reasoning:\n{response["arguments"]["reasoning"]}',
         title="action",
         type="reasoning",
         log=should_log,
     )
+
+    context_str = ""
+    for key, value in context.items():
+        context_str += f"{key}:\n\t{value}\n"
+
+    log(
+        f"Reasoning Context:\n{context_str}",
+        title="action",
+        type="reasoning",
+        log=debug,
+    )
+
     return context

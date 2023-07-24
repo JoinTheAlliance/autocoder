@@ -1,6 +1,7 @@
 import os
 import re
 from easycompletion import compose_function, compose_prompt, openai_function_call
+from termcolor import colored
 from autocoder.helpers.code import save_code
 from autocoder.helpers.context import handle_packages
 
@@ -14,7 +15,6 @@ This is my project goal:
 {{goal}}
 
 Include the following arguments:
-- reasoning: Explain your approach
 - code: The full code for the script, including all imports and code
     - Since this is the entrypoint for the project, there should be a main function which is called if __name__ == '__main__'"
     - Use a functional style, only use classes when necessary
@@ -24,43 +24,34 @@ Include the following arguments:
     - Do not use fixtures or anything else that is not a standard part of pytest"""
 
 edit_file_prompt = """\
-{{available_actions}}
-
 Notes:
 - Use a functional style for code and tests where possible
 - Do not include line numbers [#] at the beginning of the lines in your response
 - Include the correct tabs at the beginning of lines in your response
 - main.py must contain a main function which is called if __name__ == '__main__' (at the bottom of the file)
-- Replace broken code. If my code is really broken, write the code again in its entirety
-- For something small like an import, just insert the import
 - When rewriting the code, include the complete script, including all imports and code
 - Do NOT shorten or abbreviate anything, DO NOT use "..." or "# Rest of the code" - ALWAYS put the complete code in your response
 
 This is my project goal:
 {{goal}}
 
-{{reasoning}}
 {{project_code_formatted}}
+
 {{errors_formatted}}
-{{available_action_names}}
 
+{{reasoning}}
 Task:
-- First reason out loud about what you are going to do
-- Based on your reasoning, choose a function by name
-- Then choose which file to edit. You can also create or remove a file if necessary
-- Respond with the function, code, reasoning and necessary inputs to call the function
-- 
-
+- Rewrite the code to meet the stated goals and fix any errors
+- Whatever you do, ALWAYS RESPOND WITH THE ENTIRE SCRIPT, INCLUDING ALL IMPORTS AND CODE, NOT JUST CHANGES TO CODE
+- I cannot stress this enough, I need the whole script from beginning to end in your response. No shortcuts.
+- Your response should include all code, including imports, functions, comments, etc-- not just changes to code
+- Your response CANNOT include "TODO", "...", "# Rest of the code" etc. Your response needs to be a full script, not just changes to code
 """
 
 entrypoint_function = compose_function(
     name="entrypoint",
     description="Create a new script called main.py, as well as a test for main.py named main_test.py.",
     properties={
-        "reasoning": {
-            "type": "string",
-            "description": "Explain your reasoning step-by-step.",
-        },
         "code": {
             "type": "string",
             "description": "The full code for main.py, including all imports and code, with no abbreviations.",
@@ -70,17 +61,13 @@ entrypoint_function = compose_function(
             "description": "The full code for main_test.py, including all imports and code, with no abbreviations. The tests should be functional and simple, i.e. no fixtures, and compatible with pytest.",
         },
     },
-    required_properties=["reasoning", "code", "test"],
+    required_properties=["code", "test"],
 )
 
 create_file_function = compose_function(
     name="create_file",
     description="Create a new script in the project, as well as a test file for it.",
     properties={
-        "reasoning": {
-            "type": "string",
-            "description": "Explain your reasoning step-by-step.",
-        },
         "code": {
             "type": "string",
             "description": "The full code for the module, including all imports and code, with no abbreviations. Be thorough.",
@@ -90,34 +77,29 @@ create_file_function = compose_function(
             "description": "The full test code, including all imports and code, with no abbreviations. The tests must be functional, compatible with pytest and simple, i.e. don't use fixtures. Be very thorough.",
         },
     },
-    required_properties=["reasoning", "code", "test"],
+    required_properties=["code", "test"],
 )
 
 edit_function = compose_function(
     name="edit_file",
     description="Write all of the code for the module, including imports and functions. No snippets, abbreviations or single lines. Must be a complete code file with the structure 'imports', 'functions', and a main entrypoint in main.py which is called if __name__ == '__main__'.",
     properties={
-        "reasoning": {
+        "code": {
             "type": "string",
-            "description": "Explain your reasoning step-by-step.",
+            "description": "The full code for the module, including all imports and code, with no abbreviations. Be very thorough.",
         },
         "filepath": {
             "type": "string",
             "description": "Path to where the file will be written (usually just filename).",
         },
-        "code": {
-            "type": "string",
-            "description": "The full code for the module, including all imports and code, with no abbreviations. Be very thorough.",
-        },
     },
-    required_properties=["reasoning", "filepath", "code"],
+    required_properties=["code", "filepath"],
 )
 
 
 def entrypoint_handler(arguments, context):
     should_log = context.get("log_level", "normal") != "quiet"
 
-    reasoning = arguments["reasoning"]
     code = arguments["code"]
     test = arguments["test"]
 
@@ -125,7 +107,6 @@ def entrypoint_handler(arguments, context):
 
     log(
         f"Creating main.py in {project_dir}"
-        + f"\n\nReasoning:\n{reasoning}"
         + f"\n\nCode:\n{code}"
         + f"\n\nTest:\n{test}",
         title="action",
@@ -157,16 +138,19 @@ def remove_line_numbers(text):
 
 def edit_file_handler(arguments, context):
     should_log = context.get("log_level", "normal") != "quiet"
-    reasoning = arguments["reasoning"]
     code = remove_line_numbers(arguments["code"])
 
     filepath = arguments["filepath"]
     write_path = get_full_path(filepath, context["project_dir"])
 
+    # get old code
+    with open(write_path, "r") as f:
+        old_code = f.read()
+
     log(
-        f"Writing complete script to {write_path}"
-        + f"\n\nReasoning:\n{reasoning}"
-        + f"\n\nCode:\n{code}",
+        f"Editing script {write_path}"
+        + f"\n\nOld Code:\n{colored(old_code), 'yellow'}"
+        + f"\n\nNew Code:\n{colored(code, 'white')}",
         title="action",
         type="write",
         log=should_log,
@@ -178,14 +162,12 @@ def edit_file_handler(arguments, context):
 
 def create_file_handler(arguments, context):
     should_log = context.get("log_level", "normal") != "quiet"
-    reasoning = arguments["reasoning"]
-    filepath = arguments["filepath"]
+    filepath = context["action_filename"]
     code = arguments["code"]
     test = arguments["test"]
 
     log(
         f"Creating new file {filepath}"
-        + f"\n\nReasoning:\n{reasoning}"
         + f"\n\nCode:\n{code}"
         + f"\n\nTest:\n{test}",
         title="action",
@@ -208,7 +190,6 @@ def create_file_handler(arguments, context):
 
 def delete_file_handler(context):
     should_log = context.get("log_level", "normal") != "quiet"
-    reasoning = context["reasoning"]
     filepath = context["action_filename"]
 
     if "main.py" in filepath or "main_test.py" in filepath:
