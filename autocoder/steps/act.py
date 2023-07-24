@@ -12,27 +12,31 @@ create_prompt = """Task: Create a Python module that meets the stated goals, alo
 This is my project goal:
 {{goal}}
 
-You should include the following details
-- Reasoning: Think about the best approach and explain your reasoning.
-- Code: The full code for main.py, including all imports and code.
+Write the main.py with code and tests to complete this goal. You should include the following details:
+- Reasoning: Explain your approach
+- Code: The full code for main.py, including all imports and code
     - There should be a main function which is called if __name__ == '__main__' (which should be located at the bottom of the script)
-    - Use a functional style, with no global variables or classes unless necessary
-    - All code should be encapsulated in functions which can be tested
-- Packages: A list of packages to install, derived from the imports of the code. 
-- Test: The code for main_test.py, including all imports and functions. Tests should use a functional style with the assert keyword and run with pytest.
-    - All tests should be in their own functions and have setup and teardown so that they are isolated from each other.
-    - There should be multiple tests for each function, including tests for edge cases, different argument cases and failure cases.
-- Code MUST include newlines and tabs, and should be formatted with black."""
+    - Use a functional style, avoid classes unless necessary
+- Test: The code for main_test.py, including all imports and functions. Tests should use a functional style with the assert keyword and run with pytest
+    - All tests should be in their own functions and have setup and teardown so that they are isolated from each other
+    - There should be multiple tests for each function, including tests for edge cases, different argument cases and failure cases
+    - Do not use fixtures or anything else that is not a standard part of pytest"""
 
 edit_prompt = """{{available_actions}}
-Assistant Notes:
+Notes:
 - Use a functional style for code and tests
-- Do not include line numbers [#] at the beginning of the lines in your response. DO include tabs at the beginning of lines as needed
-- Add comments to your code, explaining anything that might not be obvious to someone reading the code
-- The project will only pass validation if main.py contains a main function which is called if __name__ == '__main__' (which should be located at the bottom of the script)
-- Include tabs in all code responses, especially include tabs at the beginning of a replace or insert
-- I should replace broken code. If my code is really broken, I should write the code again in its entirety
-- Remove any dead code or unused imports and keep the code concise
+- Do not include line numbers [#] at the beginning of the lines in your response
+- Include the correct tabs at the beginning of lines in your response
+- main.py must contain a main function which is called if __name__ == '__main__' (at the bottom of the file)
+- Replace broken code. If my code is really broken, write the code again in its entirety
+- For something small like an import, just insert the import
+- When rewriting the code, include the complete script, including all imports and code
+- Do NOT shorten or abbreviate anything, DO NOT use "..." or "# Rest of the code" - ALWAYS put the complete code in your response
+
+Task:
+- Choose a file to edit, create or remove
+- Respond with the function, code, reasoning and necessary inputs to call the function
+- Call one of the available functions with the correct arguments to edit the file
 
 This is my project goal:
 {{goal}}
@@ -40,11 +44,7 @@ This is my project goal:
 {{reasoning}}
 {{project_code_formatted}}
 {{errors_formatted}}
-{{available_action_names}}
-Please choose a file and rewrite it. Include the complete script, including all imports and code.
-I will be saving your "code" response to a file, so it needs to be a valid, complete python script, NOT a snippet.
-Do not respond with a message explanation. Respond with the function, code, reasoning and necessary inputs to call the function.
-"""
+{{available_action_names}}"""
 
 create_function = compose_function(
     name="create",
@@ -52,15 +52,15 @@ create_function = compose_function(
     properties={
         "reasoning": {
             "type": "string",
-            "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
+            "description": "Explain your reasoning step-by-step.",
         },
         "code": {
             "type": "string",
-            "description": "The full code for main.py, including all imports and code",
+            "description": "The full code for main.py, including all imports and code, with no abbreviations.",
         },
         "test": {
             "type": "string",
-            "description": "The full code for main_test.py, including all imports and code. Tests should use a functional style with the assert keyword for pytest.",
+            "description": "The full code for main_test.py, including all imports and code, with no abbreviations and compatible with pytest.",
         },
     },
     required_properties=["reasoning", "code", "test"],
@@ -69,7 +69,7 @@ create_function = compose_function(
 
 def create_handler(arguments, context):
     should_log = context.get("log_level", "normal") != "quiet"
-    
+
     reasoning = arguments["reasoning"]
     code = arguments["code"]
     test = arguments["test"]
@@ -302,113 +302,113 @@ def delete_file_handler(arguments, context):
 
 def get_actions():
     return [
-        # {
-        #     "function": compose_function(
-        #         name="create_new_file",
-        #         description="Create a Python file",
-        #         properties={
-        #             "reasoning": {
-        #                 "type": "string",
-        #                 "description": "Think about the best approach and write out a reasoning. Explain your reasoning.",
-        #             },
-        #             "filepath": {
-        #                 "type": "string",
-        #                 "description": "The relative path of the file to create, starting with './' and ending with '.py'. Should be relative to the project directory",
-        #             },
-        #             "code": {
-        #                 "type": "string",
-        #                 "description": "The full code for the module names <filename>, including all imports and code",
-        #             },
-        #             "test": {
-        #                 "type": "string",
-        #                 "description": "The full code for <filename>_test.py, which is a set of functional pytest-compatible tests for the module code, including all imports and code.",
-        #             },
-        #         },
-        #         required_properties=[
-        #             "reasoning",
-        #             "filepath",
-        #             "code",
-        #             "test",
-        #         ],
-        #     ),
-        #     "handler": create_new_file_handler,
-        # },
-        # {
-        #     "function": compose_function(
-        #         name="delete_file",
-        #         description="Delete a file that is unnecessary or contains duplicated functionality",
-        #         properties={
-        #             "reasoning": {
-        #                 "type": "string",
-        #                 "description": "Why are we deleting this file?",
-        #             },
-        #             "filepath": {
-        #                 "type": "string",
-        #                 "description": "The relative path of the file to delete.",
-        #             },
-        #         },
-        #         required_properties=["reasoning", "filepath"],
-        #     ),
-        #     "handler": delete_file_handler,
-        # },
-        # {
-        #     "function": compose_function(
-        #         name="edit_code",
-        #         description="Edit the code in one of three ways: insert, replace or remove. Insert: adds a line or more of code at start_line. Replace: replace broken code with new code, from start_line through end_line, and remove removes start_line through end_line.",
-        #         properties={
-        #             "reasoning": {
-        #                 "type": "string",
-        #                 "description": "What are you trying to accomplish with this change? What should the outcome be?",
-        #             },
-        #             "filepath": {
-        #                 "type": "string",
-        #                 "description": "The relative path of the file to insert code into, including .py.",
-        #             },
-        #             "edit_type": {
-        #                 "type": "string",
-        #                 "enum": ["insert", "replace", "remove"],
-        #                 "description": "The type of edit to perform.",
-        #             },
-        #             "code": {
-        #                 "type": "string",
-        #                 "description": "The snippet of code to insert or replace the existing code with. Must include correct tabs at the beginnings of all lines as needed (\t).",
-        #             },
-        #             "start_line": {
-        #                 "type": "number",
-        #                 "description": "The start line number of the file where code is being inserted, replaced or removed.",
-        #             },
-        #             "end_line": {
-        #                 "type": "number",
-        #                 "description": "The end line number of the file where code is being replaced. Required for replace and remove, use -1 for insert.",
-        #             },
-        #         },
-        #         required_properties=[
-        #             "reasoning",
-        #             "filepath",
-        #             "edit_type",
-        #             "code",
-        #             "start_line",
-        #             "end_line",
-        #         ],
-        #     ),
-        #     "handler": edit_code_handler,
-        # },
         {
             "function": compose_function(
-                name="write_code",
-                description="Write out the entire python script, including imports and functions and all other code. Must be a complete, standalone script, NOT a snippet or single line or 'rest of your code here'... -- use edit_code for that!",
+                name="create_new_file",
+                description="Create a Python file",
                 properties={
                     "reasoning": {
                         "type": "string",
-                        "description": "What does this code do? Why are you rewriting it? How will this change the behavior of the script?",
+                        "description": "Explain your reasoning step-by-step.",
                     },
                     "filepath": {
                         "type": "string",
-                        "description": "Where the file will be written.",
+                        "description": "The path of the file to create.",
                     },
                     "code": {
                         "type": "string",
-                        "description": "The complete module code to write. Must include imports, functions and all code with no abbreviations.",
+                        "description": "The full code for the module, including all imports and code, with no abbreviations",
+                    },
+                    "test": {
+                        "type": "string",
+                        "description": "A set of functional pytest-compatible tests for the module code.",
+                    },
+                },
+                required_properties=[
+                    "reasoning",
+                    "filepath",
+                    "code",
+                    "test",
+                ],
+            ),
+            "handler": create_new_file_handler,
+        },
+        {
+            "function": compose_function(
+                name="delete_file",
+                description="Delete a file that is unnecessary or contains duplicate functionality",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Why are we deleting this file? Explain step-by-step.",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "The path of the file to delete.",
+                    },
+                },
+                required_properties=["reasoning", "filepath"],
+            ),
+            "handler": delete_file_handler,
+        },
+        {
+            "function": compose_function(
+                name="edit_code",
+                description="Insert, replace or remove code. Insert: adds a line or more of code at start_line. Replace: replace broken code with new code, from start_line through end_line. Remove: removes start_line through end_line.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Explain your reasoning step-by-step.",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "The path of the file to edit.",
+                    },
+                    "edit_type": {
+                        "type": "string",
+                        "enum": ["insert", "replace", "remove"],
+                        "description": "The type of edit to perform.",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The new code to insert or replace existing code with.",
+                    },
+                    "start_line": {
+                        "type": "number",
+                        "description": "The start line number where code is being inserted, replaced or removed.",
+                    },
+                    "end_line": {
+                        "type": "number",
+                        "description": "The end line number where code is being replaced. Required for replace and remove, ignored for insert (set to -1).",
+                    },
+                },
+                required_properties=[
+                    "reasoning",
+                    "filepath",
+                    "edit_type",
+                    "code",
+                    "start_line",
+                    "end_line",
+                ],
+            ),
+            "handler": edit_code_handler,
+        },
+        {
+            "function": compose_function(
+                name="write_code",
+                description="Write all of the code for the module, including imports and functions. No snippets, abbreviations or single lines. Must be a complete code file with the structure 'imports', 'functions', and 'main entry' for main.py -- where main entry is called if __name__ == '__main__'.",
+                properties={
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Explain your reasoning step-by-step.",
+                    },
+                    "filepath": {
+                        "type": "string",
+                        "description": "Path to where the file will be written (usually just filename).",
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The full code for the module, including all imports and code, with no abbreviations.",
                     },
                 },
                 required_properties=["reasoning", "filepath", "code"],
@@ -480,7 +480,12 @@ def step(context):
 
     text = compose_prompt(prompt, context)
 
-    response = openai_function_call(text=text, functions=functions, debug=debug, model=context.get("model", "gpt-3.5-turbo-0613"))
+    response = openai_function_call(
+        text=text,
+        functions=functions,
+        debug=debug,
+        model=context.get("model", "gpt-3.5-turbo-0613"),
+    )
 
     # find the function in functions with the name that matches response["function_name"]
     # then call the handler with the arguments and context

@@ -1,5 +1,5 @@
 import os
-import pytest
+import shutil
 from autocoder.helpers.files import get_full_path
 
 from autocoder.steps.act import (
@@ -25,6 +25,10 @@ def teardown_function():
                 os.remove(os.path.join(root, name))
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
+    # remove test_dir
+    if os.path.exists("test_dir"):
+        # use shutil to recursively remove the directory
+        shutil.rmtree("test_dir")
 
 
 def test_create_handler():
@@ -173,10 +177,7 @@ def test_delete_file_handler():
     with open(os.path.join("test_dir", "file_to_delete_test.py"), "w") as f:
         f.write("def test_file_to_delete(): assert True")
 
-    context = {
-        "project_dir": "test_dir",
-        "log_level": "debug"
-    }
+    context = {"project_dir": "test_dir", "log_level": "debug"}
 
     arguments = {
         "reasoning": "Testing delete function",

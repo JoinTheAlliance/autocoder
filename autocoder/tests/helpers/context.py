@@ -139,6 +139,8 @@ def test_get_full_path():
     expected_full_path = os.getcwd() + "/example/project/subdir/file.txt"
 
     assert get_full_path(filepath, project_dir) == expected_full_path
+    # remove ./example and everything inside
+    shutil.rmtree("./example")
 
 
 def test_extract_imports():
