@@ -68,7 +68,7 @@ def test_insert_code_handler():
     arguments = {
         "reasoning": "Testing insert code handler",
         "code": "print('Inserted line')",
-        "line_number": 1,
+        "start_line": 1,
         "filepath": "main.py",
     }
 

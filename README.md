@@ -1,24 +1,51 @@
 # autocoder <a href="https://discord.gg/qetWd7J9De"><img style="float: right" src="https://dcbadge.vercel.app/api/server/qetWd7J9De" alt=""></a>
-Code that basically writes itself.
 
-# IN PROGRESS - v2 coming soon
+Code that basically writes itself.
 
 <img src="resources/image.jpg" width="100%">
 
+# Quickstart
+
 To run with a prompt
+
 ```
 python start.py
 ```
 
-To run "headless" (without being prompted)
-```
-python3 start.py --project midi_generator
+To use autocoder inside other projects and agents
+
+```python
+from autocoder import autocoder
+
+project_data = {
+    "project_name": "my_project",
+    "goal": "my_goal",
+    "project_dir": "my_project_dir",
+    "project_path": "my_project_path"
+}
+
+autocoder(project_data)
 ```
 
-# Context
+# Core Concepts
+Autocoder is a ReAct-style python coding agent. It is designed to be run standalone with a CLI or programmatically by other agents.
+
+More information on ReAct (Reasoning and Acting) agents can be found <a href="https://ai.googleblog.com/2022/11/react-synergizing-reasoning-and-acting.html">here</a>.
+
+## Loop
+
+Autocoder works by looping between a "reason"" and "act" step until the project is validated and tested. The loop runs forever but you can enable "stepped" mode in options to step through the loop manually.
+
+## Actions
+
+Autocoder uses OpenAI function calling to select and call what we call _actions_. Actions are functions that take in a context object and return a context object. They are called during the "act" step of the loop.
+
+## Context
+
 Over the course of the loop, a context object gets built up which contains all of the data from the previous steps. This can be injeced into prompt templates using the `compose_prompt` function.
 
 Here is the data that is available in the context object at each step:
+
 ```python
 # Initial context object
 context = {
@@ -81,6 +108,8 @@ context = {
         test_error,
         test_output,
     }],
+    available_actions, # list of available actions
+    available_action_names, # list of just the action names
     project_code_formatted, # formatted for prompt template
     action_name,
     reasoning # formatted for prompt template

@@ -15,7 +15,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 load_dotenv()  # take environment variables from .env.
 
 
-def main(project_data):
+def autocoder(project_data):
     """
     Main entrypoint for autocoder. Usually called from the CLI.
     """

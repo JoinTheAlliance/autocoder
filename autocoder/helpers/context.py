@@ -163,9 +163,6 @@ def run_main(context):
         context["main_error"] = None
     context["main_output"] = result["output"]
 
-    print('****** RUNNING MAIN')
-    print(result)
-
     return context
 
 

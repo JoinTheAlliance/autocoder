@@ -113,7 +113,7 @@ def run(project_data):
             with open(options_path, "w") as f:
                 json.dump(options, f)
 
-    from autocoder.main import main as autocoder
+    from autocoder import autocoder
 
     autocoder(project_data)
     sys.exit(0)

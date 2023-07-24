@@ -97,7 +97,7 @@ def test_run_main():
 def test_backup_project():
     setup_function()
 
-    context = {"project_dir": TEST_DIR, "name": PROJECT_NAME}
+    context = {"project_dir": TEST_DIR, "project_name": PROJECT_NAME}
     result = backup_project(context)
 
     assert "backup" in result

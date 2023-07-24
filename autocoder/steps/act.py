@@ -40,7 +40,7 @@ This is my project goal:
 {{reasoning}}
 {{project_code_formatted}}
 {{errors_formatted}}
-{{short_actions}}
+{{available_action_names}}
 Please choose a file and rewrite it. Include the complete script, including all imports and code.
 I will be saving your "code" response to a file, so it needs to be a valid, complete python script, NOT a snippet.
 Do not respond with a message explanation. Respond with the function, code, reasoning and necessary inputs to call the function.
@@ -132,12 +132,12 @@ def insert_code_handler(arguments, context):
     should_log = not context.get("quiet") or context.get("debug")
     reasoning = arguments["reasoning"]
     code = arguments["code"]
-    line_number = arguments["start_line"]
+    start_line = arguments["start_line"]
     filepath = arguments["filepath"]
     write_path = get_full_path(filepath, context["project_dir"])
 
     log(
-        f"Inserting code into {write_path} at line {line_number}"
+        f"Inserting code into {write_path} at line {start_line}"
         + f"\n\nReasoning:\n{reasoning}"
         + f"\n\nCode:\n{code}",
         title="action",
@@ -148,7 +148,7 @@ def insert_code_handler(arguments, context):
     with open(write_path, "r") as f:
         text = f.read()
     lines = text.split("\n")
-    lines.insert(line_number, code)
+    lines.insert(start_line, code)
     text = "\n".join(lines)
 
     log(f"New code:\n{text}", title="action", type="insert", log=should_log)
@@ -457,7 +457,7 @@ def step(context):
             context["available_actions"] += f"  {prop}: {details['description']}\n"
         context["available_actions"] += "\n"
 
-    context["short_actions"] = "Available functions: " + ", ".join(
+    context["available_action_names"] = "Available functions: " + ", ".join(
         [fn["function"]["name"] for fn in actions]
     )
 
