@@ -20,15 +20,25 @@ from agentlogger import log
 
 from agentloop import stop
 
-reasoning_prompt = """This is my code:
+reasoning_prompt = """\
+Notes:
+- There are four actions: edit_file, create_file, delete_file and finish_project
+- If you want to edit a file, respond with action_name="edit_file" and provide the path to the file you want to edit
+- If you want to create a file, respond with action_name="create_file" and provide the path to the file you want to create
+- If you want to delete a file, respond with action_name="delete_file" and provide the path to the file you want to delete
+- If the project is complete and validated, respond with action_name="finish_project"
+
+This is my code:
 {{project_code_formatted}}
 This is my goal:
 {{goal}}
 {{errors_formatted}}
-Your task: Evaluate the code and determine if it meets the goal, or what could be improved about it.
-- Please provide reasoning for why the code is valid and complete (or not) and respond with is_valid_and_complete=True
-- If it does not meet the goals, please provide explain why it does not, and what could be improved.
-- If there is way to improve the code, respond with is_valid_and_complete=False.
+Your task: Evaluate the code and determine if it meets the goal, or what could be improved about it
+- Please provide reasoning for the current state of the project and a step-by-step of what to do next.
+- In your reasoning, be to explain why the code is or isn't valid and complete and respond with is_valid_and_complete=True
+- If it does not meet the goals, please provide explain why it does not, and what could be improved
+- If there is a way to improve the code, respond with is_valid_and_complete=False
+- Please choose one of the four actions -- edit_file, create_file, delete_file or finish_project -- and provide the path to the file you want to edit, create or delete
 """
 
 
@@ -45,14 +55,22 @@ def compose_project_validation_function():
         properties={
             "reasoning": {
                 "type": "string",
-                "description": "Does the code fill the specification and complete all of my goals? Provide reasoning for why it does or doesn't, and what could be improved.",
+                "description": "Reason through the next steps step-by-step. Does the code fill the specification and complete all of my goals? In addition to reasoning, summarize what to do next.",
             },
             "is_valid_and_complete": {
                 "type": "boolean",
-                "description": "Does the code fill the specification and complete all of my goals?. True if there is nothing else that needs to be improved, False otherwise.",
+                "description": "Does the code fill the specification and complete all of my goals?. True if the project is complete and validated, False if the code still needs improvement.",
             },
+            "action_name": {
+                "type": "string",
+                "description": "The name of the action to take next. One of edit_file, create_file, delete_file or finish_project.",
+            },
+            "filename": {
+                "type": "string",
+                "description": "The path to the file to edit, create or delete.",
+            }
         },
-        required_properties=["reasoning", "is_valid_and_complete"],
+        required_properties=["reasoning", "is_valid_and_complete", "action_name", "filename"],
     )
 
 
@@ -121,10 +139,6 @@ def step(context, loop_dict):
             type="error",
             log=should_log,
         )
-        context[
-            "reasoning"
-        ] = "main.py failed to run - I probably need to fix that before I can do anything else."
-        return context
 
     # If any of the files failed to validate for any reason, go immediately to the edit step
     if context["project_validated"] is False:
@@ -141,10 +155,7 @@ def step(context, loop_dict):
                 type="error",
                 log=should_log,
             )
-            context[
-                "reasoning"
-            ] = "The project failed to validate. I need to fix the validation errors."
-        return context
+
 
     if context["project_tested"] is False:
         test_errors = ""
@@ -163,10 +174,7 @@ def step(context, loop_dict):
                 type="error",
                 log=should_log,
             )
-            context[
-                "reasoning"
-            ] = "The project failed in testing. I need to fix the test errors."
-            return context
+
 
     text = compose_prompt(reasoning_prompt, context)
     functions = compose_project_validation_function()
@@ -197,5 +205,16 @@ def step(context, loop_dict):
             log=should_log,
         )
 
+
     context["reasoning"] = response["arguments"]["reasoning"]
+    context["is_valid_and_complete"] = response["arguments"]["is_valid_and_complete"]
+    context["action_name"] = response["arguments"]["action_name"]
+    context["action_filename"] = response["arguments"]["filename"]
+
+    log(
+        f"Reasoning:\n{context['reasoning']}",
+        title="action",
+        type="reasoning",
+        log=should_log,
+    )
     return context

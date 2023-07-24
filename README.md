@@ -90,7 +90,6 @@ context = {
     file_count,
     filetree,
     filetree_formatted, # formatted for prompt template
-    python_files,
     main_success, # included in project_code_formatted
     main_error, # included in project_code_formatted
     backup,
@@ -99,6 +98,7 @@ context = {
     project_code_formatted, # formatted for prompt template
     action_name,
     reasoning, # formatted for prompt template
+    python_files,
     project_code: [{
         rel_path,
         file_path,
