@@ -22,3 +22,5 @@ jobs:
     - name: Running tests
       run: |
         pytest test.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.OPENAI_API_KEY }}
