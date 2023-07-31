@@ -38,7 +38,7 @@ def autocoder(project_data):
             context["running"] = True
         return context
 
-    loop_dict = start([initialize, reason, act], stepped=project_data["step"])
+    loop_dict = start([initialize, reason, act], paused=project_data["step"])
     if project_data["step"]:
         step_with_input_key(loop_dict)
 
